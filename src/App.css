@@ -1,4 +1,4 @@
-@import url('https://fonts.cdnfonts.com/css/opendyslexic');
+/* Fonts loaded via index.html <link> tags (Nunito + Noto Sans Tamil) */
 
 :root {
   --bg-space: #1B1B3A;
@@ -12,16 +12,18 @@
   --accent: #4CC9F0;
   --success: #38B000;
   --border: #4CC9F0;
-  --font-dyslexia: 'OpenDyslexic', sans-serif;
+  /* Nunito — rounded letterforms, clear b/d/p/q distinction, ideal for dyslexia */
+  --font-main: 'Nunito', 'Noto Sans Tamil', system-ui, sans-serif;
 }
 
 body {
   margin: 0;
-  font-family: var(--font-dyslexia);
+  font-family: var(--font-main);
   background: radial-gradient(circle at center, var(--bg-stars) 0%, var(--bg-space) 100%);
   color: var(--text-main);
   line-height: 1.6;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.3px;
+  word-spacing: 0.1em;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -153,7 +155,7 @@ body {
   border: 3px solid #E0E7FF;
   border-radius: 16px;
   font-size: 1.1rem;
-  font-family: var(--font-dyslexia);
+  font-family: var(--font-main);
   background-color: #F8FAFC;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-sizing: border-box;
@@ -496,7 +498,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-family: var(--font-dyslexia);
+  font-family: var(--font-main);
   width: 100%;
 }
 
@@ -720,7 +722,7 @@ body {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-  font-family: var(--font-dyslexia);
+  font-family: var(--font-main);
 }
 
 .category-card:hover {
@@ -781,7 +783,7 @@ body {
   cursor: pointer;
   padding: 0.5rem;
   transition: color 0.2s, transform 0.2s;
-  font-family: var(--font-dyslexia);
+  font-family: var(--font-main);
   margin-bottom: 2rem;
 }
 
@@ -895,7 +897,7 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-family: var(--font-dyslexia);
+  font-family: var(--font-main);
   text-transform: uppercase;
 }
 
@@ -1686,7 +1688,7 @@ body {
   text-align: center;
   overflow: hidden;
   transition: transform 0.25s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.25s;
-  font-family: var(--font-dyslexia);
+  font-family: var(--font-main);
 }
 
 .ls-cat-card:hover {
@@ -1831,7 +1833,7 @@ body {
   padding: 0.45rem 1rem;
   cursor: pointer;
   transition: background 0.2s, transform 0.2s;
-  font-family: var(--font-dyslexia);
+  font-family: var(--font-main);
   align-self: flex-start;
 }
 
@@ -1856,7 +1858,7 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  font-family: var(--font-dyslexia);
+  font-family: var(--font-main);
   font-size: 1.6rem;
   font-weight: 700;
   border: 2px solid rgba(76,201,240,0.25);
@@ -2019,7 +2021,7 @@ body {
   font-size: 1.2rem;
   font-weight: 700;
   cursor: pointer;
-  font-family: var(--font-dyslexia);
+  font-family: var(--font-main);
   box-shadow: 0 6px 0 #1E8449, 0 0 20px rgba(56,176,0,0.25);
   transition: transform 0.15s, box-shadow 0.15s;
   text-transform: uppercase;

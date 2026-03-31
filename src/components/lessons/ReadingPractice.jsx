@@ -101,7 +101,7 @@ export default function ReadingPractice({ speakText, speechSpeed, onBack }) {
                 style={{
                   fontSize: '3.5rem',
                   fontWeight: 'bold',
-                  fontFamily: 'var(--font-dyslexia)',
+                  fontFamily: 'var(--font-main)',
                   color: isHighlighted ? '#D35400' : '#2C3E50',
                   backgroundColor: isHighlighted ? '#FAD7A1' : 'transparent',
                   padding: '0.2rem 0.5rem',
