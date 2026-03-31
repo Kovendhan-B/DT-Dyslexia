@@ -3,6 +3,9 @@ import { User, Lock, Volume2, Rocket, Eye, EyeOff, Sparkles, LogOut, LayoutDashb
 import './App.css';
 import Lessons from './components/Lessons';
 import Dashboard from './components/Dashboard';
+import Games from './components/Games';
+import Tests from './components/Tests';
+import ParentsPortal from './components/ParentsPortal';
 
 function App() {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,6 +19,8 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [speechSpeed, setSpeechSpeed] = useState('normal');
+  const [lastSpokenText, setLastSpokenText] = useState('');
   
   const [dailyTasks, setDailyTasks] = useState([
     { id: 1, title: "Play 1 Alphabet Game", completed: false, starsReward: 3 },
@@ -49,12 +54,10 @@ function App() {
     // Try to find a sweeter/female child-friendly voice
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find(v => 
-        v.name.includes('Zira') || 
-        v.name.includes('Google UK English Female') ||
-        v.name.includes('Samantha') ||
-        v.name.includes('Victoria')
-      );
+      const voice = voices.find(v => v.lang === 'en-IN' && (v.name.includes('Female') || v.name.includes('Heera'))) || 
+                    voices.find(v => v.lang === 'en-IN') ||
+                    voices.find(v => v.name.includes('Google UK English Female')) ||
+                    voices.find(v => v.name.includes('Zira'));
       if (voice) setSweetVoice(voice);
     };
 
@@ -69,6 +72,7 @@ function App() {
   // Text-To-Speech function
   const speakText = (text) => {
     if ('speechSynthesis' in window) {
+      setLastSpokenText(text);
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       
@@ -76,9 +80,15 @@ function App() {
         utterance.voice = sweetVoice;
       }
 
-      utterance.rate = 0.9; // Calm, clear speed
-      utterance.pitch = 1.5; // Higher pitch creates a sweeter, more friendly tone for kids
+      utterance.rate = speechSpeed === 'slow' ? 0.6 : 0.85; // Slower speed
+      utterance.pitch = 1.3; // Slightly less high pitch for a natural friendly teacher
       window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const replayAudio = () => {
+    if (lastSpokenText) {
+      speakText(lastSpokenText);
     }
   };
 
@@ -392,7 +402,29 @@ function App() {
         </nav>
       </aside>
 
-      <main className="dashboard-content">
+      <main className="dashboard-content" style={{ position: 'relative' }}>
+        {/* Floating Audio Controls */}
+        <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.8rem', zIndex: 100 }}>
+          <button 
+            onClick={replayAudio} 
+            className="tts-button" 
+            style={{ width: 'auto', padding: '0.6rem 1.2rem', borderRadius: '50px', fontWeight: 'bold', fontSize: '1.1rem' }}
+          >
+            🔄 Replay
+          </button>
+          <button 
+            onClick={() => setSpeechSpeed(s => s === 'normal' ? 'slow' : 'normal')} 
+            className="tts-button" 
+            style={{ 
+              width: 'auto', padding: '0.6rem 1.2rem', borderRadius: '50px', fontWeight: 'bold', fontSize: '1.1rem',
+              backgroundColor: speechSpeed === 'slow' ? '#27AE60' : '#F39C12',
+              boxShadow: speechSpeed === 'slow' ? '0 4px 0 #1E8449' : '0 4px 0 #D68910'
+            }}
+          >
+            {speechSpeed === 'slow' ? '🐢 Slow Speed' : '🐇 Normal Speed'}
+          </button>
+        </div>
+
         {currentView === 'dashboard' && (
           <Dashboard
             username={username}
@@ -402,10 +434,10 @@ function App() {
             setCurrentView={setCurrentView}
           />
         )}
-        {currentView === 'lessons' && <Lessons speakText={speakText} />}
-        {currentView === 'games' && <div className="dashboard-header"><h1>Games Coming Soon!</h1></div>}
-        {currentView === 'tests' && <div className="dashboard-header"><h1>Tests Coming Soon!</h1></div>}
-        {currentView === 'parents' && <div className="dashboard-header"><h1>Parents Portal Coming Soon!</h1></div>}
+        {currentView === 'lessons' && <Lessons speakText={speakText} speechSpeed={speechSpeed} setSpeechSpeed={setSpeechSpeed} replayAudio={replayAudio} onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'games' && <Games speakText={speakText} speechSpeed={speechSpeed} setSpeechSpeed={setSpeechSpeed} replayAudio={replayAudio} onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'tests' && <Tests speakText={speakText} speechSpeed={speechSpeed} setSpeechSpeed={setSpeechSpeed} replayAudio={replayAudio} onBack={() => setCurrentView('dashboard')} />}
+        {currentView === 'parents' && <ParentsPortal onBack={() => setCurrentView('dashboard')} />}
 
 
       </main>

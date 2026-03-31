@@ -50,7 +50,24 @@ export default function Dashboard({ username, dailyTasks, setDailyTasks, speakTe
   const [language, setLanguage] = useState('english');
   const [burstingTask, setBurstingTask] = useState(null);
   const [lockedTooltip, setLockedTooltip] = useState(null);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState(false);
   const burstTimeoutRef = useRef(null);
+
+  const handlePinSubmit = (e) => {
+    e.preventDefault();
+    if (pinInput === '1234') {
+      setShowPinModal(false);
+      setPinInput('');
+      setPinError(false);
+      setCurrentView('parents');
+    } else {
+      setPinError(true);
+      setPinInput('');
+      speakText('Incorrect PIN.');
+    }
+  };
 
   const completedCount = dailyTasks.filter(t => t.completed).length;
   const totalTasks = dailyTasks.length;
@@ -102,31 +119,59 @@ export default function Dashboard({ username, dailyTasks, setDailyTasks, speakTe
       id: 'games',
       emoji: '🎮',
       title: 'Games',
-      status: 'Coming Soon',
-      active: false,
-      tooltip: 'Unlocks Soon... 🚀',
+      status: 'Active',
+      active: true,
+      onClick: () => setCurrentView('games'),
     },
     {
       id: 'tests',
       emoji: '📝',
       title: 'Tests',
-      status: 'Coming Soon',
-      active: false,
-      tooltip: 'Unlocks Soon... 🚀',
+      status: 'Active',
+      active: true,
+      onClick: () => setCurrentView('tests'),
+      tooltip: 'Evaluate what you learned! 🚀',
     },
     {
       id: 'parents',
       emoji: '👨‍👩‍👧',
       title: 'Parents Portal',
-      status: 'Coming Soon',
-      active: false,
-      tooltip: 'For grown-ups only! 🔑',
+      status: 'Active',
+      active: true,
+      onClick: () => setShowPinModal(true),
+      tooltip: 'Track Progress & Settings 🔑',
       isParents: true,
     },
   ];
 
   return (
     <div className="db-root">
+      
+      {/* PIN Modal */}
+      {showPinModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(5px)' }}>
+          <div style={{ backgroundColor: 'white', padding: '3rem 4rem', borderRadius: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', border: '4px solid #F44336' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔐</div>
+            <h2 style={{ fontSize: '2.5rem', color: '#D32F2F', margin: '0 0 1rem 0' }}>Parents Only</h2>
+            <p style={{ color: '#666', marginBottom: '2rem', fontSize: '1.2rem' }}>Please enter the PIN to continue.<br/>(Hint: 1234)</p>
+            <form onSubmit={handlePinSubmit}>
+              <input 
+                type="password" 
+                maxLength={4}
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                autoFocus
+                style={{ fontSize: '3rem', width: '200px', textAlign: 'center', letterSpacing: '15px', padding: '1rem', borderRadius: '20px', border: `4px solid ${pinError ? '#F44336' : '#E0E0E0'}`, marginBottom: '1rem', outline: 'none', background: '#FAFAFA' }}
+              />
+              {pinError && <div style={{ color: '#F44336', fontWeight: 'bold', marginBottom: '1rem', fontSize: '1.1rem' }}>Incorrect PIN. Try again.</div>}
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
+                <button type="button" onClick={() => { setShowPinModal(false); setPinInput(''); setPinError(false); }} style={{ padding: '1rem 2.5rem', borderRadius: '50px', border: 'none', backgroundColor: '#E0E0E0', color: '#666', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ padding: '1rem 2.5rem', borderRadius: '50px', border: 'none', backgroundColor: '#F44336', color: 'white', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(244,67,54,0.3)' }}>Unlock</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ═══════════════════════════════════════════
           ZONE 1 — Identity Bar

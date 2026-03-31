@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.cdnfonts.com/css/opendyslexic');
 
 :root {
   --bg-space: #1B1B3A;
@@ -12,7 +12,7 @@
   --accent: #4CC9F0;
   --success: #38B000;
   --border: #4CC9F0;
-  --font-dyslexia: 'Lexend', sans-serif;
+  --font-dyslexia: 'OpenDyslexic', sans-serif;
 }
 
 body {

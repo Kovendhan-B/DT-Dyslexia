@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { Volume2, ArrowRight, Lock, ChevronLeft } from 'lucide-react';
+import { Volume2, ArrowRight, Lock, ChevronLeft, LayoutGrid } from 'lucide-react';
+
+import PhonicsBasics from './lessons/PhonicsBasics';
+import SimpleWords from './lessons/SimpleWords';
+import SightWords from './lessons/SightWords';
+import WordBuilding from './lessons/WordBuilding';
+import SentenceFormation from './lessons/SentenceFormation';
+import ReadingPractice from './lessons/ReadingPractice';
+import ListeningMatching from './lessons/ListeningMatching';
+import AlphabetTracing from './lessons/AlphabetTracing';
 
 const alphabetData = [
   { letter: 'A', word: 'Apple',      emoji: '🍎' },
@@ -10,6 +19,7 @@ const alphabetData = [
   { letter: 'F', word: 'Fish',       emoji: '🐟' },
   { letter: 'G', word: 'Grapes',     emoji: '🍇' },
   { letter: 'H', word: 'Hat',        emoji: '🎩' },
+  { letter: 'I', word: 'Ice Cream',  emoji: '🍦' },
   { letter: 'J', word: 'Juice',      emoji: '🧃' },
   { letter: 'K', word: 'Kite',       emoji: '🪁' },
   { letter: 'L', word: 'Lion',       emoji: '🦁' },
@@ -42,23 +52,51 @@ const numberData = [
   { number: '10', word: 'Ten',   emoji: '🔟', countEmoji: '⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐' },
 ];
 
+const LESSON_CATEGORIES = [
+  { id: 'alphabets', emoji: '🔤', title: 'Alphabets', desc: 'Learn letters A – Z with fun words!', color: '#4A90E2', glowClass: 'ls-cat-glow-blue', count: alphabetData.length },
+  { id: 'numbers', emoji: '🔢', title: 'Numbers', desc: 'Count from 1 to 10 with stars!', color: '#F39C12', glowClass: 'ls-cat-glow-amber', count: numberData.length },
+  { id: 'phonics', emoji: '🗣️', title: 'Phonics Basics', desc: 'Learn letter sounds!', color: '#27AE60', glowClass: 'ls-cat-glow-green', count: '1 Lesson' },
+  { id: 'simplewords', emoji: '📝', title: 'Simple Words', desc: 'Read 2-3 letter words!', color: '#8E44AD', glowClass: 'ls-cat-glow-purple', count: '1 Lesson' },
+  { id: 'sightwords', emoji: '👁️', title: 'Sight Words', desc: 'Common words flashcards!', color: '#E74C3C', glowClass: 'ls-cat-glow-red', count: '1 Lesson' },
+  { id: 'wordbuilding', emoji: '🏗️', title: 'Word Building', desc: 'Combine letters to build words!', color: '#00BCD4', glowClass: 'ls-cat-glow-cyan', count: '1 Lesson' },
+  { id: 'sentence', emoji: '🧩', title: 'Sentences', desc: 'Build simple sentences!', color: '#FF9800', glowClass: 'ls-cat-glow-orange', count: '1 Lesson' },
+  { id: 'reading', emoji: '📖', title: 'Reading Practice', desc: 'Read short sentences!', color: '#009688', glowClass: 'ls-cat-glow-teal', count: '1 Lesson' },
+  { id: 'listening', emoji: '🎧', title: 'Listening', desc: 'Listen and match images!', color: '#3F51B5', glowClass: 'ls-cat-glow-indigo', count: '1 Lesson' }
+];
+
 export default function Lessons({ speakText }) {
   const [activeCategory, setActiveCategory] = useState(null);
   const [unlockedAlpha, setUnlockedAlpha] = useState(0);
   const [unlockedNum,   setUnlockedNum]   = useState(0);
   const [viewingIndex,  setViewingIndex]  = useState(null);
+  const [completedLessons, setCompletedLessons] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('dyslexia_lessons_progress')) || [];
+    } catch { return []; }
+  });
 
-  const handleSelectCategory = (category) => {
-    setActiveCategory(category);
-    speakText(`Let's learn ${category}!`);
+  const handleSelectCategory = (categoryObj) => {
+    setActiveCategory(categoryObj.id);
+    speakText(`Let's play ${categoryObj.title}!`);
   };
 
   const handleBackToCategories = () => { setActiveCategory(null); setViewingIndex(null); };
   const handleBackToList       = () => { setViewingIndex(null); };
 
+  const handleLessonComplete = () => {
+    if (activeCategory && !completedLessons.includes(activeCategory)) {
+      const newCompleted = [...completedLessons, activeCategory];
+      setCompletedLessons(newCompleted);
+      localStorage.setItem('dyslexia_lessons_progress', JSON.stringify(newCompleted));
+      speakText("Awesome! You got a shiny star!");
+    }
+    setActiveCategory(null);
+    setViewingIndex(null);
+  };
+
   const openLesson = (index, isLocked, category) => {
     if (isLocked) {
-      speakText('This lesson is locked. Finish the previous ones first!');
+      speakText('Oops! This is locked. Finish the ones before it first!');
       return;
     }
     setViewingIndex(index);
@@ -122,37 +160,52 @@ export default function Lessons({ speakText }) {
           <div className="ls-page-sub">What would you like to explore today?</div>
         </div>
 
-        <div className="ls-cat-grid">
-          {/* Alphabets card */}
-          <button className="ls-cat-card ls-cat-alpha" onClick={() => handleSelectCategory('alphabets')}>
-            <div className="ls-cat-glow-ring ls-cat-glow-blue" />
-            <div className="ls-cat-emoji">🔤</div>
-            <div className="ls-cat-title">Alphabets</div>
-            <div className="ls-cat-desc">Learn letters A – Z with fun words!</div>
-            <div className="ls-cat-badge">{alphabetData.length} lessons</div>
-            <div className="ls-cat-cta">Start Learning →</div>
-          </button>
-
-          {/* Numbers card */}
-          <button className="ls-cat-card ls-cat-num" onClick={() => handleSelectCategory('numbers')}>
-            <div className="ls-cat-glow-ring ls-cat-glow-amber" />
-            <div className="ls-cat-emoji">🔢</div>
-            <div className="ls-cat-title">Numbers</div>
-            <div className="ls-cat-desc">Count from 1 to 10 with stars!</div>
-            <div className="ls-cat-badge">{numberData.length} lessons</div>
-            <div className="ls-cat-cta">Start Counting →</div>
-          </button>
+        <div className="ls-cat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', padding: '1rem', paddingBottom: '3rem' }}>
+          {LESSON_CATEGORIES.map(cat => (
+            <button 
+              key={cat.id}
+              className={`ls-cat-card ${cat.glowClass}`} 
+              onClick={() => handleSelectCategory(cat)}
+              style={{ borderTop: `6px solid ${cat.color}`, position: 'relative' }}
+            >
+              {completedLessons.includes(cat.id) && (
+                <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '1.5rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}>⭐</div>
+              )}
+              <div className="ls-cat-emoji">{cat.emoji}</div>
+              <div className="ls-cat-title">{cat.title}</div>
+              <div className="ls-cat-desc">{cat.desc}</div>
+              <div className="ls-cat-badge">{cat.count} {typeof cat.count === 'number' ? 'lessons' : ''}</div>
+              <div className="ls-cat-cta" style={{ color: cat.color }}>Start Learning →</div>
+            </button>
+          ))}
         </div>
       </div>
     );
   }
 
   /* ─────────────────────────────────────────────
-     VIEW 2 — Detail Card
+     EXTERNAL LESSON ROUTES
+  ───────────────────────────────────────────── */
+  if (activeCategory === 'phonics') return <PhonicsBasics speakText={speakText} onBack={handleLessonComplete} />;
+  if (activeCategory === 'simplewords') return <SimpleWords speakText={speakText} onBack={handleLessonComplete} />;
+  if (activeCategory === 'sightwords') return <SightWords speakText={speakText} onBack={handleLessonComplete} />;
+  if (activeCategory === 'wordbuilding') return <WordBuilding speakText={speakText} onBack={handleLessonComplete} />;
+  if (activeCategory === 'sentence') return <SentenceFormation speakText={speakText} onBack={handleLessonComplete} />;
+  if (activeCategory === 'reading') return <ReadingPractice speakText={speakText} speechSpeed={speechSpeed} onBack={handleLessonComplete} />;
+  if (activeCategory === 'listening') return <ListeningMatching speakText={speakText} onBack={handleLessonComplete} />;
+
+  /* ─────────────────────────────────────────────
+     VIEW 2 — Detail Card (Alphabets & Numbers)
   ───────────────────────────────────────────── */
   if (viewingIndex !== null) {
     const isAlpha    = activeCategory === 'alphabets';
-    const data       = isAlpha ? alphabetData : numberData;
+
+    if (isAlpha) {
+      const item = alphabetData[viewingIndex];
+      return <AlphabetTracing data={item} speakText={speakText} onBack={handleBackToList} onNext={handleNext} isLast={viewingIndex === alphabetData.length - 1} />;
+    }
+
+    const data       = numberData;
     const item       = data[viewingIndex];
     const isLast     = viewingIndex === data.length - 1;
     const progress   = ((viewingIndex + 1) / data.length) * 100;
@@ -175,7 +228,6 @@ export default function Lessons({ speakText }) {
 
         {/* Main card */}
         <div className="ls-detail-card">
-          {/* Big letter / number */}
           <div className="ls-detail-hero">
             <span className="ls-detail-char">
               {isAlpha ? item.letter : item.number}
@@ -185,7 +237,6 @@ export default function Lessons({ speakText }) {
             </button>
           </div>
 
-          {/* Emoji + word */}
           <div className="ls-detail-showcase">
             <div className="ls-detail-big-emoji">{item.emoji}</div>
             <div className="ls-detail-word">{item.word}</div>
@@ -194,7 +245,6 @@ export default function Lessons({ speakText }) {
             )}
           </div>
 
-          {/* Next / Finish */}
           <button className="ls-next-btn" onClick={handleNext}>
             {isLast ? '🎉 Finish!' : `Next ${isAlpha ? 'Letter' : 'Number'}`}
             {!isLast && <ArrowRight size={20} />}
@@ -205,7 +255,7 @@ export default function Lessons({ speakText }) {
   }
 
   /* ─────────────────────────────────────────────
-     VIEW 3 — Grid of items
+     VIEW 3 — Grid of items (Alphabets & Numbers)
   ───────────────────────────────────────────── */
   const isAlpha        = activeCategory === 'alphabets';
   const dataList       = isAlpha ? alphabetData : numberData;
@@ -215,7 +265,6 @@ export default function Lessons({ speakText }) {
 
   return (
     <div className="ls-root">
-      {/* Header */}
       <div className="ls-grid-header">
         <button className="ls-back-btn" onClick={handleBackToCategories}>
           <ChevronLeft size={20} /> Categories
@@ -226,7 +275,6 @@ export default function Lessons({ speakText }) {
         <div className="ls-grid-sub">Unlock one by one as you learn!</div>
       </div>
 
-      {/* Progress */}
       <div className="ls-progress-strip">
         <span className="ls-progress-label">{doneCount} / {dataList.length} unlocked</span>
         <div className="ls-progress-track">
@@ -234,7 +282,6 @@ export default function Lessons({ speakText }) {
         </div>
       </div>
 
-      {/* Grid */}
       <div className={`ls-grid ${isAlpha ? 'ls-grid-alpha' : 'ls-grid-num'}`}>
         {dataList.map((item, index) => {
           const locked    = index > currentUnlocked;

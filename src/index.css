@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap');
+@import url('https://fonts.cdnfonts.com/css/opendyslexic');
 
 :root {
   /* Dyslexia-friendly color palette (Soft and High Contrast, no pure black/white) */
@@ -17,7 +17,7 @@
   --focus-ring: rgba(74, 144, 226, 0.4);
 
   /* Typography */
-  --font-dyslexia: 'Lexend', sans-serif;
+  --font-dyslexia: 'OpenDyslexic', sans-serif;
   --spacing-base: 1.5; /* High line height */
 }
 
