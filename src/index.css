@@ -1,32 +1,75 @@
-/* Fonts loaded via index.html <link> tags (Nunito + Noto Sans Tamil) */
+/* ================================================================
+   Dys-Learn — Global Base Styles & Design Tokens
+   "Calm Cosmos" Design System
+   ================================================================ */
+
+/* Fonts: Nunito (dyslexia-friendly) + Inter (UI headings) + Noto Sans Tamil */
 
 :root {
-  /* Dyslexia-friendly color palette */
-  --bg-color: #FDFCDC;
-  --text-main: #2B2D42;
-  --text-muted: #595B6E;
-  --primary: #4A90E2;
-  --primary-hover: #357ABD;
-  --secondary: #8E44AD;
-  --success: #27AE60;
-  --error: #E74C3C;
-  --surface: #FFFFFF;
-  --border: #D1D8E0;
-  --focus-ring: rgba(74, 144, 226, 0.4);
+  /* ── Background ───────────────────────────────────────────── */
+  --bg-space:    #0f172a;
+  --bg-mid:      #1e1b4b;
+  --bg-gradient: linear-gradient(160deg, #0f172a 0%, #1e1b4b 55%, #0f172a 100%);
 
-  /* Nunito — rounded, clear letterforms, excellent for dyslexia */
-  --font-main: 'Nunito', 'Noto Sans Tamil', system-ui, sans-serif;
-  --spacing-base: 1.6;
+  /* ── Panel / Surface ──────────────────────────────────────── */
+  --panel-bg:      rgba(255, 255, 255, 0.05);
+  --panel-border:  rgba(255, 255, 255, 0.09);
+  --panel-glow:    rgba(99, 102, 241, 0.12);
+
+  /* ── Accent Colors ────────────────────────────────────────── */
+  --accent-primary:   #818cf8;   /* soft indigo  */
+  --accent-primary-dark: #4f46e5;
+  --accent-secondary: #34d399;   /* emerald green */
+  --accent-warm:      #fb923c;   /* soft orange   */
+  --accent-cyan:      #67e8f9;   /* sky blue      */
+  --accent-pink:      #f472b6;   /* soft rose     */
+
+  /* ── Text ─────────────────────────────────────────────────── */
+  --text-bright:  #f1f5f9;
+  --text-mid:     #94a3b8;
+  --text-dim:     #475569;
+
+  /* ── Light Surface (Parents Portal) ──────────────────────── */
+  --surf-bg:      #f8fafc;
+  --surf-card:    #ffffff;
+  --surf-border:  #e2e8f0;
+  --surf-text:    #1e293b;
+  --surf-muted:   #64748b;
+
+  /* ── Legacy aliases (kept for compatibility) ─────────────── */
+  --bg-stars:    var(--bg-mid);
+  --panel-bg-solid: rgba(255, 255, 255, 0.95);
+  --text-main:   var(--text-bright);
+  --text-muted:  var(--text-mid);
+  --primary:     var(--accent-warm);
+  --primary-hover: #ea7a28;
+  --secondary:   var(--accent-primary);
+  --accent:      var(--accent-cyan);
+  --success:     var(--accent-secondary);
+  --border:      var(--accent-cyan);
+
+  /* ── Typography ───────────────────────────────────────────── */
+  --font-main:    'Nunito', 'Noto Sans Tamil', system-ui, sans-serif;
+  --font-ui:      'Inter', 'Nunito', system-ui, sans-serif;
+
+  /* ── Motion ───────────────────────────────────────────────── */
+  --ease-spring:  cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-smooth:  cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 0.15s;
+  --duration-base: 0.25s;
+  --duration-slow: 0.4s;
 }
 
+/* ── Body ───────────────────────────────────────────────────── */
 body {
   margin: 0;
   font-family: var(--font-main);
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  line-height: var(--spacing-base);
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text-bright);
+  line-height: 1.65;
   letter-spacing: 0.3px;
-  word-spacing: 0.1em;
+  word-spacing: 0.08em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   display: flex;
@@ -41,7 +84,7 @@ body {
   justify-content: center;
 }
 
-/* Base interactive elements styling */
+/* ── Interactive Element Baseline ───────────────────────────── */
 button, input {
   font-family: var(--font-main);
   font-size: 1rem;
@@ -49,7 +92,7 @@ button, input {
 }
 
 button:focus-visible, input:focus-visible {
-  outline: 3px solid var(--primary);
+  outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px var(--focus-ring);
+  box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.25);
 }

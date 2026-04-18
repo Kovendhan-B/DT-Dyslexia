@@ -8,35 +8,34 @@ function getRank(completedCount, lang) {
   return t(lang, 'rankCadet');
 }
 
-// ─── Planet surface emojis based on progress ────────────────────────────────
-function PlanetSurface({ completedCount }) {
-  if (completedCount === 0) return (
-    <>
-      <span className="db-planet-emoji" style={{ top: '35%', left: '18%', fontSize: '1.4rem' }}>🌑</span>
-      <span className="db-planet-emoji" style={{ top: '55%', left: '58%', fontSize: '1.1rem' }}>🌑</span>
-    </>
-  );
-  if (completedCount <= 5) return (
-    <>
-      <span className="db-planet-emoji" style={{ top: '28%', left: '22%', fontSize: '1.6rem' }}>🌱</span>
-      <span className="db-planet-emoji" style={{ top: '55%', left: '58%', fontSize: '1.3rem' }}>🌱</span>
-      <span className="db-planet-emoji" style={{ top: '68%', left: '30%', fontSize: '1rem' }}>🌱</span>
-    </>
-  );
-  if (completedCount <= 15) return (
-    <>
-      <span className="db-planet-emoji" style={{ top: '20%', left: '20%', fontSize: '1.8rem' }}>🌳</span>
-      <span className="db-planet-emoji" style={{ top: '50%', left: '58%', fontSize: '1.8rem' }}>🏠</span>
-      <span className="db-planet-emoji" style={{ top: '68%', left: '32%', fontSize: '1.3rem' }}>🌿</span>
-    </>
-  );
+// ─── XP Donut Ring ──────────────────────────────────────────────────────────
+function XPRing({ totalXP, planetLevel, planetProgress }) {
+  const R = 76;                       // radius (viewBox 180 = 180/2 - 14/2)
+  const C = 2 * Math.PI * R;         // circumference
+  const offset = C - (planetProgress / 100) * C;
   return (
-    <>
-      <span className="db-planet-emoji" style={{ top: '18%', left: '18%', fontSize: '1.8rem' }}>🏙️</span>
-      <span className="db-planet-emoji" style={{ top: '48%', left: '60%', fontSize: '1.6rem' }}>🌳</span>
-      <span className="db-planet-emoji" style={{ top: '65%', left: '28%', fontSize: '1.4rem' }}>🚀</span>
-      <span className="db-planet-emoji" style={{ top: '22%', left: '60%', fontSize: '1.2rem' }}>✨</span>
-    </>
+    <div className="db-ring-wrap">
+      <svg className="db-ring-svg" viewBox="0 0 180 180" aria-hidden="true">
+        <defs>
+          <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#818cf8" />
+            <stop offset="100%" stopColor="#67e8f9" />
+          </linearGradient>
+        </defs>
+        <circle className="db-ring-track" cx="90" cy="90" r={R} />
+        <circle
+          className="db-ring-fill"
+          cx="90" cy="90" r={R}
+          strokeDasharray={C}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <div className="db-ring-center">
+        <div className="db-ring-xp">{totalXP}</div>
+        <div className="db-ring-label">XP</div>
+        <div className="db-ring-level">Lv {planetLevel}</div>
+      </div>
+    </div>
   );
 }
 
@@ -112,11 +111,11 @@ export default function Dashboard({
 
       {/* PIN Modal */}
       {showPinModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(5px)' }}>
-          <div style={{ backgroundColor: 'white', padding: '3rem 4rem', borderRadius: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', border: '4px solid #F44336' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔐</div>
-            <h2 style={{ fontSize: '2.5rem', color: '#D32F2F', margin: '0 0 1rem 0' }}>{tr('parentsOnly')}</h2>
-            <p style={{ color: '#666', marginBottom: '2rem', fontSize: '1.2rem' }}>{tr('pinInstruction')}</p>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(8px)' }}>
+          <div style={{ background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(129,140,248,0.2)', padding: '3rem', borderRadius: '28px', textAlign: 'center', boxShadow: '0 24px 60px rgba(0,0,0,0.6)', maxWidth: '360px', width: '90%' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔐</div>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f1f5f9', margin: '0 0 0.5rem 0' }}>{tr('parentsOnly')}</h2>
+            <p style={{ color: '#94a3b8', marginBottom: '2rem', fontSize: '1rem' }}>{tr('pinInstruction')}</p>
             <form onSubmit={handlePinSubmit}>
               <input
                 type="password"
@@ -124,12 +123,12 @@ export default function Dashboard({
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
                 autoFocus
-                style={{ fontSize: '3rem', width: '200px', textAlign: 'center', letterSpacing: '15px', padding: '1rem', borderRadius: '20px', border: `4px solid ${pinError ? '#F44336' : '#E0E0E0'}`, marginBottom: '1rem', outline: 'none', background: '#FAFAFA' }}
+                style={{ fontSize: '2rem', width: '160px', textAlign: 'center', letterSpacing: '12px', padding: '0.8rem', borderRadius: '14px', border: `1.5px solid ${pinError ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.12)'}`, marginBottom: '0.5rem', outline: 'none', background: 'rgba(255,255,255,0.06)', color: '#f1f5f9', boxSizing: 'border-box' }}
               />
-              {pinError && <div style={{ color: '#F44336', fontWeight: 'bold', marginBottom: '1rem', fontSize: '1.1rem' }}>{tr('incorrectPin')}</div>}
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
-                <button type="button" onClick={() => { setShowPinModal(false); setPinInput(''); setPinError(false); }} style={{ padding: '1rem 2.5rem', borderRadius: '50px', border: 'none', backgroundColor: '#E0E0E0', color: '#666', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer' }}>{tr('cancel')}</button>
-                <button type="submit" style={{ padding: '1rem 2.5rem', borderRadius: '50px', border: 'none', backgroundColor: '#F44336', color: 'white', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(244,67,54,0.3)' }}>{tr('unlock')}</button>
+              {pinError && <div style={{ color: '#f87171', fontWeight: 700, marginBottom: '1rem', fontSize: '0.9rem' }}>{tr('incorrectPin')}</div>}
+              <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'center', marginTop: '1.5rem' }}>
+                <button type="button" onClick={() => { setShowPinModal(false); setPinInput(''); setPinError(false); }} style={{ padding: '0.75rem 1.8rem', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#94a3b8', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: 'var(--font-main)' }}>{tr('cancel')}</button>
+                <button type="submit" style={{ padding: '0.75rem 1.8rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#4f46e5,#818cf8)', color: 'white', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', boxShadow: '0 4px 16px rgba(99,102,241,0.4)', fontFamily: 'var(--font-main)' }}>{tr('unlock')}</button>
               </div>
             </form>
           </div>
@@ -162,15 +161,9 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* ═══ ZONE 2 — Hero Planet ═══════════════════════════════════════════ */}
+      {/* ═══ ZONE 2 — XP Ring ════════════════════════════════════════════════ */}
       <div className="db-hero">
-        <div className="db-planet-wrap">
-          <div className="db-orbit-ring" />
-          <div className="db-planet">
-            <PlanetSurface completedCount={completedCount} />
-          </div>
-        </div>
-        <div className="db-planet-label">{tr('planetLevel')}: {planetLevel}</div>
+        <XPRing totalXP={progress?.totalXP ?? 0} planetLevel={planetLevel} planetProgress={planetProgress} />
         <div className="db-planet-progress-wrap">
           <div className="db-planet-progress-bar">
             <div className="db-planet-progress-fill" style={{ width: `${planetProgress}%` }} />
@@ -194,7 +187,16 @@ export default function Dashboard({
               >
                 <div className="db-quest-check-wrap">
                   <div className={`db-quest-check ${task.completed ? 'db-check-done' : ''}`}>
-                    {task.completed ? '✅' : '○'}
+                    {task.completed ? (
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                        <circle cx="11" cy="11" r="10" fill="rgba(129,140,248,0.9)" />
+                        <polyline points="6,11 10,15 16,8" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                        <circle cx="11" cy="11" r="10" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+                      </svg>
+                    )}
                   </div>
                   {burstingTask === task.id && (
                     <div className="db-burst-container" aria-hidden="true">

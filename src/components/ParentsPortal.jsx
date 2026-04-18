@@ -15,199 +15,192 @@ function relativeTime(isoString) {
   return `${days} day${days > 1 ? 's' : ''} ago`;
 }
 
-// ─── Activity icon map ────────────────────────────────────────────────────────
 const ACTION_META = {
-  login:              { Icon: CheckCircle, color: '#2196F3', label: 'Logged in' },
-  task_complete:      { Icon: Star,        color: '#FF9800', label: 'Completed task' },
-  lesson_complete:    { Icon: BookOpen,    color: '#4CAF50', label: 'Finished lesson' },
-  game_complete:      { Icon: Gamepad2,    color: '#9C27B0', label: 'Completed game' },
-  test_complete:      { Icon: Trophy,      color: '#E91E63', label: 'Completed test' },
-  alphabet_unlocked:  { Icon: Brain,       color: '#00BCD4', label: 'Unlocked letter' },
-  number_unlocked:    { Icon: Brain,       color: '#FF5722', label: 'Unlocked number' },
+  login:              { Icon: CheckCircle, color: '#4f46e5', label: 'Logged in' },
+  task_complete:      { Icon: Star,        color: '#f59e0b', label: 'Completed task' },
+  lesson_complete:    { Icon: BookOpen,    color: '#34d399', label: 'Finished lesson' },
+  game_complete:      { Icon: Gamepad2,    color: '#818cf8', label: 'Completed game' },
+  test_complete:      { Icon: Trophy,      color: '#f472b6', label: 'Completed test' },
+  alphabet_unlocked:  { Icon: Brain,       color: '#67e8f9', label: 'Unlocked letter' },
+  number_unlocked:    { Icon: Brain,       color: '#fb923c', label: 'Unlocked number' },
 };
-
 function getActionMeta(action) {
-  return ACTION_META[action] || { Icon: Activity, color: '#607D8B', label: action };
+  return ACTION_META[action] || { Icon: Activity, color: '#94a3b8', label: action };
 }
 
-// ─── Skill level calculator (real) ───────────────────────────────────────────
 function getSkillLevel(type, progress) {
   const tests    = progress?.testsCompleted ?? [];
   const getScore = (id) => tests.find(t => t.id === id)?.score ?? 0;
-
-  if (type === 'reading') {
+  if (type === 'reading')  {
     const score = Math.max(getScore('reading'), getScore('sightwords'));
     return score > 0 ? Math.min(score, 100) : ((progress?.unlockedAlpha ?? 0) / 26) * 30;
   }
-  if (type === 'writing') {
-    return Math.round(((progress?.unlockedAlpha ?? 0) / 26) * 100);
-  }
+  if (type === 'writing')   return Math.round(((progress?.unlockedAlpha ?? 0) / 26) * 100);
   if (type === 'listening') {
     const score = getScore('phonics');
     return score > 0 ? Math.min(score, 100) : ((progress?.gamesCompleted ?? []).includes('sound') ? 50 : 15);
   }
-  if (type === 'memory') {
-    const gamesCount = (progress?.gamesCompleted ?? []).length;
-    return Math.min(Math.round((gamesCount / 6) * 100), 100);
-  }
+  if (type === 'memory')    return Math.min(Math.round(((progress?.gamesCompleted ?? []).length / 6) * 100), 100);
   return 0;
 }
 
-// ─── Insight generators ───────────────────────────────────────────────────────
 function getStrengthInsight(progress) {
-  const tests    = progress?.testsCompleted ?? [];
-  const hasId    = (id) => tests.some(t => t.id === id);
+  const tests = progress?.testsCompleted ?? [];
+  const hasId = (id) => tests.some(t => t.id === id);
   if (hasId('phonics') && hasId('reading')) return 'Exceptional auditory and reading comprehension!';
   if (hasId('alphabet')) return 'Great start with Letter Recognition and alphabets.';
   if (hasId('sentence')) return 'Strong understanding of sentence structures.';
   if ((progress?.lessonsCompleted ?? []).length > 0) return 'Great progress in lessons! Keep going.';
   return "Your child is just getting started! Encourage them to try the Alphabet Lesson first.";
 }
-
 function getRecommendation(progress) {
-  const tests    = progress?.testsCompleted ?? [];
-  const hasId    = (id) => tests.some(t => t.id === id);
+  const tests = progress?.testsCompleted ?? [];
+  const hasId = (id) => tests.some(t => t.id === id);
   if (!hasId('phonics') && hasId('alphabet')) return 'Practice Phonics sounds to improve letter-sound associations.';
   if (!hasId('sentence') && hasId('reading')) return 'Try the Sentence Formation tests for structural learning.';
-  if (!hasId('reading'))  return 'Practice tracing and simple reading flashcards.';
+  if (!hasId('reading')) return 'Practice tracing and simple reading flashcards.';
   return 'Keep up the momentum! Allow them to explore the Games hub freely.';
+}
+
+// ─── Stat cards config ────────────────────────────────────────────────────────
+function buildStats(progress, tr) {
+  const testsCompleted   = progress?.testsCompleted   ?? [];
+  const lessonsCompleted = progress?.lessonsCompleted ?? [];
+  const gamesCompleted   = progress?.gamesCompleted   ?? [];
+  const totalXP          = progress?.totalXP          ?? 0;
+  const streakCount      = progress?.streak?.count    ?? 0;
+  return [
+    { Icon: Star,    bg: '#fefce8', color: '#f59e0b', label: tr('totalScore'),   value: `${totalXP} XP` },
+    { Icon: BookOpen,bg: '#f0fdf4', color: '#34d399', label: tr('lessonsViewed'),value: lessonsCompleted.length },
+    { Icon: Gamepad2,bg: '#eff6ff', color: '#60a5fa', label: tr('gamesPlayed'),  value: gamesCompleted.length },
+    { Icon: Award,   bg: '#fdf4ff', color: '#c084fc', label: tr('testsMastered'),value: `${testsCompleted.length} / 7` },
+    { Icon: Flame,   bg: '#fff1f2', color: '#f87171', label: tr('currentStreak'),value: `${streakCount} ${tr('days')}` },
+  ];
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function ParentsPortal({ onBack, progress, language }) {
   const tr = (key) => t(language, key);
 
-  // ── Derived stats ─────────────────────────────────────────────────────────
-  const testsCompleted   = progress?.testsCompleted   ?? [];
-  const lessonsCompleted = progress?.lessonsCompleted  ?? [];
-  const gamesCompleted   = progress?.gamesCompleted    ?? [];
-  const totalXP          = progress?.totalXP           ?? 0;
-  const streakCount      = progress?.streak?.count     ?? 0;
-  const sessionLog       = progress?.sessionLog        ?? [];
-  const weeklyStars      = progress?.weeklyStars       ?? 0;
+  const testsCompleted = progress?.testsCompleted   ?? [];
+  const weeklyStars    = progress?.weeklyStars       ?? 0;
+  const sessionLog     = progress?.sessionLog        ?? [];
 
   const SKILLS = [
-    { label: tr('reading'),  type: 'reading',   color: '#E91E63' },
-    { label: tr('writing'),  type: 'writing',   color: '#00BCD4' },
-    { label: tr('auditory'), type: 'listening', color: '#FF9800' },
-    { label: tr('memory'),   type: 'memory',    color: '#4CAF50' },
+    { label: tr('reading'),  type: 'reading',   color: '#f472b6' },
+    { label: tr('writing'),  type: 'writing',   color: '#67e8f9' },
+    { label: tr('auditory'), type: 'listening', color: '#fb923c' },
+    { label: tr('memory'),   type: 'memory',    color: '#4ade80' },
   ];
+  const STATS = buildStats(progress, tr);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#F8F9FA', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="pp-root">
 
-      {/* HEADER */}
-      <div style={{ background: 'linear-gradient(135deg, #1A237E, #3949AB)', padding: '2rem', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-        <div>
-          <button onClick={onBack} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', padding: '0.8rem 1.5rem', borderRadius: '50px', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}>
-            <ChevronLeft size={20} /> {tr('backToStudent')}
-          </button>
-          <h1 style={{ fontSize: '2.5rem', margin: '1.5rem 0 0 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <TrendingUp size={36} /> {tr('analyticsTitle')}
-          </h1>
-          <p style={{ margin: '0.5rem 0 0 0', opacity: 0.8, fontSize: '1.2rem' }}>{tr('analyticsSubtitle')}</p>
-        </div>
+      {/* ── HEADER ─────────────────────────────────────────────── */}
+      <div className="pp-header">
+        <button className="pp-header-back" onClick={onBack}>
+          <ChevronLeft size={18} /> {tr('backToStudent')}
+        </button>
+        <h1 className="pp-header-title">
+          <TrendingUp size={30} /> {tr('analyticsTitle')}
+        </h1>
+        <p className="pp-header-sub">{tr('analyticsSubtitle')}</p>
       </div>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 2rem' }}>
+      <div className="pp-content">
 
-        {/* ── TOP STATS ───────────────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
-
-          {[
-            { icon: <Star size={32} color="#FFB300" />, bg: '#FFF8E1', border: '#FFC107', label: tr('totalScore'),   value: `${totalXP} XP` },
-            { icon: <BookOpen size={32} color="#43A047" />, bg: '#E8F5E9', border: '#4CAF50', label: tr('lessonsViewed'), value: lessonsCompleted.length },
-            { icon: <Gamepad2 size={32} color="#1E88E5" />, bg: '#E3F2FD', border: '#2196F3', label: tr('gamesPlayed'),   value: gamesCompleted.length },
-            { icon: <Award size={32} color="#8E24AA" />,  bg: '#F3E5F5', border: '#9C27B0', label: tr('testsMastered'),  value: `${testsCompleted.length} / 7` },
-            { icon: <Flame size={32} color="#F44336" />,  bg: '#FFEBEE', border: '#F44336', label: tr('currentStreak'), value: `${streakCount} ${tr('days')}` },
-          ].map(({ icon, bg, border, label, value }) => (
-            <div key={label} style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '1.2rem', borderLeft: `6px solid ${border}` }}>
-              <div style={{ backgroundColor: bg, padding: '1.2rem', borderRadius: '15px' }}>{icon}</div>
+        {/* ── TOP STATS ─────────────────────────────────────────── */}
+        <div className="pp-stats-grid">
+          {STATS.map(({ Icon, bg, color, label, value }) => (
+            <div key={label} className="pp-stat-card" style={{ borderLeft: `4px solid ${color}` }}>
+              <div className="pp-stat-icon" style={{ background: bg }}>
+                <Icon size={28} color={color} />
+              </div>
               <div>
-                <div style={{ fontSize: '0.9rem', color: '#666', fontWeight: 'bold', textTransform: 'uppercase' }}>{label}</div>
-                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>{value}</div>
+                <div className="pp-stat-label">{label}</div>
+                <div className="pp-stat-value">{value}</div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* ── SKILL BARS + INSIGHTS ────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '2rem', marginBottom: '3rem' }}>
-
-          {/* Skill Bars */}
-          <div style={{ backgroundColor: 'white', padding: '3rem', borderRadius: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-            <h2 style={{ fontSize: '1.8rem', color: '#333', marginTop: 0, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-              <Brain size={28} color="#9C27B0" /> {tr('skillDev')}
+        {/* ── SKILL BARS + INSIGHTS ─────────────────────────────── */}
+        <div className="pp-two-col">
+          <div className="pp-card">
+            <h2 className="pp-card-title">
+              <Brain size={22} color="#818cf8" /> {tr('skillDev')}
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {SKILLS.map(skill => {
-                const val  = getSkillLevel(skill.type, progress);
-                const desc = val >= 75 ? tr('good') : val >= 40 ? tr('improving') : tr('beginner');
-                return (
-                  <div key={skill.type}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontWeight: 'bold', color: '#555' }}>
-                      <span>{skill.label}</span>
-                      <span style={{ color: skill.color }}>{desc} ({val}%)</span>
-                    </div>
-                    <div style={{ width: '100%', height: '16px', backgroundColor: '#F5F5F5', borderRadius: '10px', overflow: 'hidden' }}>
-                      <div style={{ width: `${val}%`, height: '100%', backgroundColor: skill.color, borderRadius: '10px', transition: 'width 1s ease' }} />
-                    </div>
+            {SKILLS.map(skill => {
+              const val  = getSkillLevel(skill.type, progress);
+              const desc = val >= 75 ? tr('good') : val >= 40 ? tr('improving') : tr('beginner');
+              return (
+                <div key={skill.type} className="pp-skill-item">
+                  <div className="pp-skill-label-row">
+                    <span>{skill.label}</span>
+                    <span style={{ color: skill.color, fontWeight: 700, fontSize: '0.85rem' }}>{desc} ({val}%)</span>
                   </div>
-                );
-              })}
-            </div>
+                  <div className="pp-skill-track">
+                    <div className="pp-skill-fill" style={{ width: `${val}%`, background: skill.color }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Insights */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <div style={{ background: '#FFFDF5', padding: '2rem', borderRadius: '24px', border: '2px solid #FFE082', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
-              <h3 style={{ fontSize: '1.4rem', color: '#F57C00', marginTop: 0, marginBottom: '1rem' }}>{tr('strengths')}</h3>
-              <p style={{ color: '#555', lineHeight: 1.6, margin: 0 }}>{getStrengthInsight(progress)}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="pp-insight" style={{ background: '#fffbeb', borderColor: '#fcd34d' }}>
+              <h3 className="pp-insight-title" style={{ color: '#d97706' }}>{tr('strengths')}</h3>
+              <p className="pp-insight-text">{getStrengthInsight(progress)}</p>
             </div>
-            <div style={{ backgroundColor: '#F3E5F5', padding: '2rem', borderRadius: '24px', border: '2px solid #CE93D8', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
-              <h3 style={{ fontSize: '1.4rem', color: '#8E24AA', marginTop: 0, marginBottom: '1rem' }}>{tr('recommended')}</h3>
-              <p style={{ color: '#555', lineHeight: 1.6, margin: 0 }}>{getRecommendation(progress)}</p>
+            <div className="pp-insight" style={{ background: '#fdf4ff', borderColor: '#d8b4fe' }}>
+              <h3 className="pp-insight-title" style={{ color: '#7c3aed' }}>{tr('recommended')}</h3>
+              <p className="pp-insight-text">{getRecommendation(progress)}</p>
             </div>
-            <div style={{ backgroundColor: '#E8F5E9', padding: '2rem', borderRadius: '24px', border: '2px solid #A5D6A7' }}>
-              <h3 style={{ fontSize: '1.3rem', color: '#2E7D32', marginTop: 0, marginBottom: '0.5rem' }}>⭐ {language === 'ta' ? 'இந்த வாரம்' : 'This Week'}</h3>
-              <p style={{ color: '#555', margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>{weeklyStars} {language === 'ta' ? 'நட்சத்திரங்கள்' : 'Stars'}</p>
+            <div className="pp-insight" style={{ background: '#f0fdf4', borderColor: '#86efac' }}>
+              <h3 className="pp-insight-title" style={{ color: '#16a34a' }}>
+                ⭐ {language === 'ta' ? 'இந்த வாரம்' : 'This Week'}
+              </h3>
+              <p className="pp-insight-text" style={{ fontSize: '1.3rem', fontWeight: 800, color: '#15803d' }}>
+                {weeklyStars} {language === 'ta' ? 'நட்சத்திரங்கள்' : 'Stars'}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* ── TEST HISTORY TABLE ───────────────────────────────────────────── */}
-        <div style={{ backgroundColor: 'white', padding: '3rem', borderRadius: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: '1.8rem', color: '#333', marginTop: 0, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-            <Trophy size={28} color="#E91E63" /> {tr('testHistory')}
+        {/* ── TEST HISTORY ─────────────────────────────────────────── */}
+        <div className="pp-card" style={{ marginBottom: '1.5rem' }}>
+          <h2 className="pp-card-title">
+            <Trophy size={22} color="#f472b6" /> {tr('testHistory')}
           </h2>
-
           {testsCompleted.length === 0 ? (
-            <p style={{ color: '#999', textAlign: 'center', fontSize: '1.2rem', padding: '2rem 0' }}>{tr('noTests')}</p>
+            <p style={{ color: 'var(--surf-muted)', textAlign: 'center', padding: '1.5rem 0' }}>{tr('noTests')}</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1.1rem' }}>
+              <table className="pp-table">
                 <thead>
-                  <tr style={{ backgroundColor: '#F8F9FA' }}>
+                  <tr>
                     {['Test', tr('score'), tr('date')].map(h => (
-                      <th key={h} style={{ padding: '1rem', textAlign: 'left', color: '#666', fontWeight: 'bold', borderBottom: '2px solid #EEE' }}>{h}</th>
+                      <th key={h}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {testsCompleted.map((tc) => {
                     const pct   = tc.score;
-                    const color = pct >= 80 ? '#4CAF50' : pct >= 50 ? '#FF9800' : '#F44336';
+                    const color = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626';
+                    const bg    = pct >= 80 ? '#f0fdf4' : pct >= 50 ? '#fffbeb' : '#fff1f2';
                     return (
-                      <tr key={tc.id} style={{ borderBottom: '1px solid #F5F5F5' }}>
-                        <td style={{ padding: '1rem', fontWeight: 'bold', color: '#333', textTransform: 'capitalize' }}>
+                      <tr key={tc.id}>
+                        <td style={{ fontWeight: 700, textTransform: 'capitalize' }}>
                           {tc.id.replace(/([a-z])([A-Z])/g, '$1 $2')}
                         </td>
-                        <td style={{ padding: '1rem' }}>
-                          <span style={{ backgroundColor: color + '20', color, fontWeight: 'bold', padding: '0.3rem 1rem', borderRadius: '50px' }}>
+                        <td>
+                          <span className="pp-score-badge" style={{ background: bg, color }}>
                             {tc.score} pts
                           </span>
                         </td>
-                        <td style={{ padding: '1rem', color: '#888' }}>{tc.date}</td>
+                        <td style={{ color: 'var(--surf-muted)', fontSize: '0.9rem' }}>{tc.date}</td>
                       </tr>
                     );
                   })}
@@ -217,30 +210,29 @@ export default function ParentsPortal({ onBack, progress, language }) {
           )}
         </div>
 
-        {/* ── ACTIVITY TIMELINE ────────────────────────────────────────────── */}
-        <div style={{ backgroundColor: 'white', padding: '3rem', borderRadius: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-          <h2 style={{ fontSize: '1.8rem', color: '#333', marginTop: 0, marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-            <Activity size={28} color="#2196F3" /> {tr('activityLog')}
+        {/* ── ACTIVITY TIMELINE ─────────────────────────────────────── */}
+        <div className="pp-card">
+          <h2 className="pp-card-title">
+            <Activity size={22} color="#60a5fa" /> {tr('activityLog')}
           </h2>
-
           {sessionLog.length === 0 ? (
-            <p style={{ color: '#999', textAlign: 'center', fontSize: '1.2rem', padding: '2rem 0' }}>{tr('noActivity')}</p>
+            <p style={{ color: 'var(--surf-muted)', textAlign: 'center', padding: '1.5rem 0' }}>{tr('noActivity')}</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '400px', overflowY: 'auto' }}>
+            <div className="pp-timeline">
               {sessionLog.slice(0, 20).map((act, i) => {
                 const meta = getActionMeta(act.action);
                 const Icon = meta.Icon;
                 return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1.2rem', backgroundColor: '#FAFAFA', borderRadius: '15px', border: '1px solid #EEE' }}>
-                    <div style={{ backgroundColor: meta.color, padding: '0.9rem', borderRadius: '50%', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
-                      <Icon size={20} />
+                  <div key={i} className="pp-timeline-item">
+                    <div className="pp-timeline-icon" style={{ background: meta.color }}>
+                      <Icon size={18} />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#333' }}>
+                      <div className="pp-timeline-name">
                         {meta.label}{act.detail ? `: ${act.detail}` : ''}
                       </div>
-                      <div style={{ color: '#888', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.2rem' }}>
-                        <Clock size={13} /> {relativeTime(act.date)}
+                      <div className="pp-timeline-time">
+                        <Clock size={12} /> {relativeTime(act.date)}
                       </div>
                     </div>
                   </div>

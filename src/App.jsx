@@ -29,7 +29,6 @@ function App() {
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [stars, setStars]               = useState([]);
-  const [rockets, setRockets]           = useState([]);
   const [sweetVoice, setSweetVoice]     = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLaunching, setIsLaunching]   = useState(false);
@@ -56,15 +55,6 @@ function App() {
       animationDelay:    `${Math.random() * 2}s`,
     }));
     setStars(newStars);
-    const newRockets = Array.from({ length: 6 }).map((_, i) => ({
-      id: `rocket-${i}`,
-      left: `${(Math.random() * 60) - 20}vw`,
-      top:  `${(Math.random() * 80) + 20}vh`,
-      size: `${Math.random() * 2 + 3}rem`,
-      animationDuration: `${Math.random() * 20 + 15}s`,
-      animationDelay:    `${Math.random() * 25}s`,
-    }));
-    setRockets(newRockets);
     // Voice
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
@@ -229,15 +219,13 @@ function App() {
             }} />
           ))}
         </div>
-        {rockets.map((rocket) => (
-          <div key={rocket.id} className="flying-rocket" aria-hidden="true" style={{
-            left: rocket.left, top: rocket.top, fontSize: rocket.size,
-            animationDuration: rocket.animationDuration, animationDelay: rocket.animationDelay
-          }}>🚀</div>
-        ))}
 
+        {/* Login card */}
         <main className="login-container">
-          <div className="rocket-decoration">🚀</div>
+          {/* Brand mark */}
+          <div className="rocket-decoration" aria-hidden="true">
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-bright)', letterSpacing: '-0.5px' }}>Dys<span style={{ color: 'var(--accent-primary)' }}>Learn</span></span>
+          </div>
           <header className="login-header">
             <h1>{isLogin ? tr('loginTitle') : tr('registerTitle')}</h1>
             <p>{isLogin ? tr('loginSubtitle') : tr('registerSubtitle')}</p>
@@ -280,7 +268,6 @@ function App() {
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
                   required
-                  readOnly={isLogin && !!existingUser}
                 />
               </div>
             </div>
@@ -309,7 +296,7 @@ function App() {
                 />
                 <button
                   type="button"
-                  style={{ position: 'absolute', right: '1rem', background: 'none', border: 'none', color: 'var(--secondary)', cursor: 'pointer' }}
+                  style={{ position: 'absolute', right: '1rem', background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer' }}
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
@@ -319,7 +306,17 @@ function App() {
             </div>
 
             {authError && (
-              <div style={{ color: '#E74C3C', fontWeight: 'bold', marginBottom: '1rem', fontSize: '1rem', textAlign: 'center', backgroundColor: '#FDEDEC', padding: '0.8rem', borderRadius: '12px' }}>
+              <div role="alert" style={{
+                color: '#fca5a5',
+                fontWeight: 700,
+                marginBottom: '0.5rem',
+                fontSize: '0.9rem',
+                textAlign: 'center',
+                background: 'rgba(239,68,68,0.12)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                padding: '0.7rem 1rem',
+                borderRadius: '12px',
+              }}>
                 {authError}
               </div>
             )}
@@ -333,8 +330,7 @@ function App() {
           <footer className="footer-text">
             <div style={{ marginBottom: '1rem' }}>
               {isLogin ? tr('newLearner') + ' ' : tr('haveAccount') + ' '}
-              {/* Only show toggle if no user exists (can't register when one already exists) */}
-              {isLogin && !existingUser && (
+              {isLogin && (
                 <a href="#" onClick={toggleMode}>{tr('joinLink')}</a>
               )}
               {!isLogin && (
