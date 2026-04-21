@@ -6,12 +6,8 @@ import Dashboard from './components/Dashboard';
 import Games from './components/Games';
 import Tests from './components/Tests';
 import ParentsPortal from './components/ParentsPortal';
-import {
-  getUser, saveUser,
-  getProgress, saveProgress, updateProgress,
-  computeAndUpdateStreak, resetTasksIfNewDay, resetWeeklyStarsIfNewWeek,
-  logActivity,
-} from './services/storage';
+import { supabase } from './services/supabaseClient';
+import { fetchProgress, toggleDailyTask as apiToggleTask } from './services/api';
 import { t } from './i18n/translations';
 
 function App() {
@@ -37,14 +33,23 @@ function App() {
   const [lastSpokenText, setLastSpokenText] = useState('');
   const [language, setLanguage]         = useState('en');   // 'en' | 'ta'
 
-  // ── Bootstrap: check for existing user on mount ────────────────────────────
+  // ── Bootstrap: check for existing session on mount ─────────────────────────
   useEffect(() => {
-    const existingUser = getUser();
-    if (existingUser) {
-      // One-user-per-device: pre-fill username, show login
-      setUsernameInput(existingUser.username);
-      setIsLogin(true);
-    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUsernameInput(session.user.user_metadata?.username || session.user.email.split('@')[0]);
+        doLogin(session.user);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        doLogin(session.user);
+      } else {
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    });
     // Generate background decorations
     const newStars = Array.from({ length: 50 }).map((_, i) => ({
       id: i,
@@ -93,20 +98,20 @@ function App() {
   };
 
   // ── Login after successful auth ────────────────────────────────────────────
-  const doLogin = (loggedInUser) => {
-    setUser(loggedInUser);
-    // Load progress and run daily housekeeping
-    let p = getProgress();
-    p = computeAndUpdateStreak(p);
-    p = resetTasksIfNewDay(p);
-    p = resetWeeklyStarsIfNewWeek(p);
-    saveProgress(p);
-    setProgress(p);
-    logActivity('login', `User ${loggedInUser.username} logged in`);
+  const doLogin = async (loggedInUser) => {
+    setUser({ username: loggedInUser.user_metadata?.username || loggedInUser.email.split('@')[0] });
+    setIsLoggedIn(true);
+    try {
+      const p = await fetchProgress();
+      setProgress(p);
+    } catch (err) {
+      console.error("Failed to load progress from DJango API:", err);
+      window.alert("Backend Connection Failed: " + err.message + "\nPlease make sure the Django server is still running on port 8000.");
+    }
   };
 
-  // ── Auth submit ────────────────────────────────────────────────────────────
-  const handleSubmit = (e) => {
+  // ── Auth submit (Supabase) ────────────────────────────────────────────────
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
     const trimmedUsername = usernameInput.trim();
@@ -117,33 +122,29 @@ function App() {
       return;
     }
 
-    if (isLogin) {
-      // Login: check stored user
-      const existingUser = getUser();
-      if (!existingUser) {
-        setAuthError('No account found. Please register first.');
-        return;
+    const email = `${trimmedUsername.toLowerCase().replace(/[^a-z0-9]/g, '')}@dyslearn.com`;
+
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password: trimmedPassword,
+        });
+        if (error) throw error;
+        speakText('Blast off! Welcome back.');
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password: trimmedPassword,
+          options: { data: { username: trimmedUsername } }
+        });
+        if (error) throw error;
+        speakText('Welcome to the crew! Registration successful.');
       }
-      if (existingUser.username !== trimmedUsername || existingUser.password !== trimmedPassword) {
-        speakText("Hmm, that code isn't quite right. Try again!");
-        setAuthError('Incorrect name or password.');
-        return;
-      }
-      speakText('Blast off! Welcome back.');
-      doLogin(existingUser);
       triggerLaunchSequence();
-    } else {
-      // Register: ensure no user exists (one user per device)
-      const existingUser = getUser();
-      if (existingUser) {
-        setAuthError(`An account already exists for "${existingUser.username}". Please log in.`);
-        return;
-      }
-      const newUser = { username: trimmedUsername, password: trimmedPassword };
-      saveUser(newUser);
-      speakText('Welcome to the crew! Registration successful.');
-      doLogin(newUser);
-      triggerLaunchSequence();
+    } catch (err) {
+      speakText("Hmm, that code isn't quite right. Try again!");
+      setAuthError(err.message || 'Authentication failed.');
     }
   };
 
@@ -164,33 +165,38 @@ function App() {
     speakText(isLogin ? "Let's create a new learner profile!" : "Welcome back! Ready to log in?");
   };
 
-  // ── Task toggle ────────────────────────────────────────────────────────────
-  const toggleTask = (taskId, taskTitle, currentStatus, starsReward) => {
+  // ── Task toggle (API call) ───────────────────────────────────────────────
+  const toggleTask = async (taskId, taskTitle, currentStatus, starsReward) => {
     if (!progress) return;
+    
+    // Optimistic UI update
     const newTasks = progress.dailyTasks.map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
     );
     let newProgress = { ...progress, dailyTasks: newTasks };
 
     if (!currentStatus) {
-      // Task just completed — award XP + weekly stars
       const xpEarned = starsReward * 10;
-      newProgress = {
-        ...newProgress,
-        totalXP:      newProgress.totalXP + xpEarned,
-        weeklyStars:  newProgress.weeklyStars + starsReward,
-      };
+      newProgress.totalXP += xpEarned;
+      newProgress.weeklyStars += starsReward;
       speakText(`Great job! You earned ${starsReward} stars for completing: ${taskTitle}`);
-      logActivity('task_complete', taskTitle);
     } else {
       speakText(`${taskTitle} needs to be done.`);
     }
-    saveProgress(newProgress);
+    
     setProgress(newProgress);
+
+    // Call API behind the scenes
+    try {
+      await apiToggleTask(taskId, currentStatus, starsReward);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // ── Logout ─────────────────────────────────────────────────────────────────
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setIsLoggedIn(false);
     setUser(null);
     setProgress(null);
@@ -208,7 +214,6 @@ function App() {
   // RENDER: Login / Register
   // ══════════════════════════════════════════════════════════════════════════
   const renderLoginForm = () => {
-    const existingUser = getUser();
     return (
       <>
         <div className="stars">
