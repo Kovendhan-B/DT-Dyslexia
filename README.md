@@ -96,94 +96,51 @@ DT-Dyslexia/
 
 ---
 
-## 🚀 Getting Started & Installation
+## 🚀 Quick Start Guide
 
-### Prerequisites
-- **Node.js** v18+ and **npm** v9+
-- **Python** 3.10+
-- **Supabase** account (for Database and Auth)
-
-### 1. Clone the repository
-
+### 1. Clone & Setup the Database
+First, clone the repository to your computer:
 ```bash
 git clone https://github.com/Kovendhan-B/DT-Dyslexia.git
 cd DT-Dyslexia
 ```
 
-### 2. Frontend Setup
-
-Install Node dependencies and start the Vite dev server:
-
-```bash
-npm install
-npm run dev
-```
-The frontend will be available at [http://localhost:5173](http://localhost:5173).
-
-### 3. Backend Setup
-
-Open a new terminal and navigate to the `backend` directory:
-
-```bash
-cd backend
-```
-
-Create and activate a Python virtual environment:
-
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
-
-# macOS / Linux
-python3 -m venv venv
-source venv/bin/activate
-```
-
-Install Python dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Environment Variables
-
-Create a `.env` file inside the `backend` directory and add your Supabase credentials:
+Next, you need to connect the database. Create a `.env` file inside the `backend` directory.
+*(Ask the repository owner for these keys, or create your own free project at [Supabase.com](https://supabase.com))*
 
 ```env
-DJANGO_SECRET_KEY=your_django_secret_key
-DEBUG=True
-DATABASE_URL=your_supabase_postgresql_url
+# backend/.env
+DJANGO_SECRET_KEY=your_secret_key
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_JWT_SECRET=your_supabase_jwt_secret
-CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-Run database migrations:
-
+### 2. Run the Backend (Django)
+Open a terminal in the `backend` folder:
 ```bash
-python manage.py migrate
-```
+# Activate virtual environment (Windows)
+venv\Scripts\activate
 
-### 5. Train the Machine Learning Model
+# Install dependencies (first time only)
+pip install -r requirements.txt
 
-Before running the backend, generate the synthetic data and train the XGBoost model for risk prediction:
-
-```bash
-# Ensure you are still in the backend directory
-python ml_pipeline/data_gen.py
-python ml_pipeline/train.py
-```
-This will create an `ml_model/model.pkl` file used by the API.
-
-### 6. Run the Backend Server
-
-Start the Django development server:
-
-```bash
+# Start the server
 python manage.py runserver
 ```
-The backend API will be available at [http://localhost:8000](http://localhost:8000).
+
+### 3. Run the Frontend (React)
+Open a **new** terminal in the main project folder:
+```bash
+# Install dependencies (first time only)
+npm install
+
+# Start the app
+npm run dev
+```
+
+### 4. Play!
+For the best experience (including high-quality Indian English Text-to-Speech), open **Microsoft Edge** and navigate to:
+👉 **[http://localhost:5173](http://localhost:5173)**
 
 ---
 
