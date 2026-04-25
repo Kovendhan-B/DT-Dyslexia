@@ -1,6 +1,7 @@
-import React from 'react';
-import { ChevronLeft, TrendingUp, Star, CheckCircle, BookOpen, Gamepad2, Brain, Activity, Clock, Award, Flame, Trophy } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, TrendingUp, Star, CheckCircle, BookOpen, Gamepad2, Brain, Activity, Clock, Award, Flame, Trophy, RefreshCw } from 'lucide-react';
 import { t } from '../i18n/translations';
+import { fetchProgress } from '../services/api';
 
 // ─── Relative time helper ─────────────────────────────────────────────────────
 function relativeTime(isoString) {
@@ -23,7 +24,9 @@ const ACTION_META = {
   test_complete:      { Icon: Trophy,      color: '#f472b6', label: 'Completed test' },
   alphabet_unlocked:  { Icon: Brain,       color: '#67e8f9', label: 'Unlocked letter' },
   number_unlocked:    { Icon: Brain,       color: '#fb923c', label: 'Unlocked number' },
+  tracing_complete:   { Icon: CheckCircle, color: '#a3e635', label: 'Traced letter' },
 };
+
 function getActionMeta(action) {
   return ACTION_META[action] || { Icon: Activity, color: '#94a3b8', label: action };
 }
@@ -33,12 +36,12 @@ function getSkillLevel(type, progress) {
   const getScore = (id) => tests.find(t => t.id === id)?.score ?? 0;
   if (type === 'reading')  {
     const score = Math.max(getScore('reading'), getScore('sightwords'));
-    return score > 0 ? Math.min(score, 100) : ((progress?.unlockedAlpha ?? 0) / 26) * 30;
+    return score > 0 ? Math.min(score, 100) : Math.round(((progress?.unlockedAlpha ?? 0) / 26) * 30);
   }
   if (type === 'writing')   return Math.round(((progress?.unlockedAlpha ?? 0) / 26) * 100);
   if (type === 'listening') {
     const score = getScore('phonics');
-    return score > 0 ? Math.min(score, 100) : ((progress?.gamesCompleted ?? []).includes('sound') ? 50 : 15);
+    return score > 0 ? Math.min(score, 100) : ((progress?.gamesCompleted ?? []).includes('sound') ? 50 : 0);
   }
   if (type === 'memory')    return Math.min(Math.round(((progress?.gamesCompleted ?? []).length / 6) * 100), 100);
   return 0;
@@ -79,8 +82,25 @@ function buildStats(progress, tr) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-export default function ParentsPortal({ onBack, progress, language }) {
+export default function ParentsPortal({ onBack, progress: propProgress, language }) {
   const tr = (key) => t(language, key);
+
+  // Fetch fresh progress from API every time the portal opens
+  const [liveProgress, setLiveProgress] = useState(propProgress);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState(null);
+
+  const refresh = () => {
+    setLoading(true);
+    setError(null);
+    fetchProgress()
+      .then(data => { setLiveProgress(data); setLoading(false); })
+      .catch(err  => { setError(err.message); setLoading(false); });
+  };
+
+  useEffect(() => { refresh(); }, []);
+
+  const progress = liveProgress;
 
   const testsCompleted = progress?.testsCompleted   ?? [];
   const weeklyStars    = progress?.weeklyStars       ?? 0;
@@ -106,6 +126,22 @@ export default function ParentsPortal({ onBack, progress, language }) {
           <TrendingUp size={30} /> {tr('analyticsTitle')}
         </h1>
         <p className="pp-header-sub">{tr('analyticsSubtitle')}</p>
+        <button
+          onClick={refresh}
+          style={{
+            marginTop: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+            background: 'none', border: '1px solid #a5b4fc', borderRadius: '20px',
+            padding: '0.3rem 0.9rem', color: '#818cf8', cursor: 'pointer', fontSize: '0.85rem'
+          }}
+        >
+          <RefreshCw size={14} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+          {loading ? 'Refreshing…' : 'Refresh'}
+        </button>
+        {error && (
+          <p style={{ color: '#f87171', fontSize: '0.85rem', marginTop: '0.3rem' }}>
+            ⚠️ Could not refresh: {error}
+          </p>
+        )}
       </div>
 
       <div className="pp-content">

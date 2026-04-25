@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Volume2, ArrowRight, Lock, ChevronLeft } from 'lucide-react';
 import { t } from '../i18n/translations';
-import { logActivity } from '../services/storage';
+import { logActivity, logLessonCompleted } from '../services/api';
+
 
 import PhonicsBasics       from './lessons/PhonicsBasics';
 import SimpleWords         from './lessons/SimpleWords';
@@ -101,11 +102,24 @@ export default function Lessons({
     if (catId && !completedLessons.includes(catId)) {
       const newCompleted = [...completedLessons, catId];
       persistProgress({ lessonsCompleted: newCompleted });
-      logActivity('lesson_complete', catId);
+      logLessonCompleted(catId).catch(err => console.error('Failed to log lesson:', err));
+      logActivity('lesson_complete', catId).catch(() => {});
       speakText('Awesome! You got a shiny star!');
     }
     setActiveCategory(null);
     setViewingIndex(null);
+  };
+
+  // Called by AlphabetTracing when the user successfully traces a letter
+  const handleTracingComplete = (accuracyPct) => {
+    if (viewingIndex === null) return;
+    const letter = alphabetData[viewingIndex]?.letter;
+    if (!letter) return;
+    // Save per-letter accuracy into progress.lessonAccuracy map
+    const currentAccuracy = progress?.lessonAccuracy || {};
+    const updated = { ...currentAccuracy, [`alpha_${letter}`]: accuracyPct };
+    persistProgress({ lessonAccuracy: updated });
+    logActivity('tracing_complete', `${letter}:${accuracyPct}%`).catch(() => {});
   };
 
   const openLesson = (index, isLocked, category) => {
@@ -119,44 +133,49 @@ export default function Lessons({
       speakText(`${letter} is for ${word}`);
     } else {
       const { number, word } = numberData[index];
-      speakText(`${number}. ${word}.`);
+      speakText(word);
     }
   };
 
   const handleNext = () => {
     if (activeCategory === 'alphabets') {
-      if (viewingIndex === unlockedAlpha && unlockedAlpha < alphabetData.length - 1) {
-        // Unlock next letter and persist
-        const newUnlocked = unlockedAlpha + 1;
+      // Unlock next letter only if we're at the current frontier
+      const shouldUnlockAlpha = viewingIndex >= unlockedAlpha && unlockedAlpha < alphabetData.length - 1;
+      if (shouldUnlockAlpha) {
+        const newUnlocked = viewingIndex + 1;
         persistProgress({ unlockedAlpha: newUnlocked });
-        logActivity('alphabet_unlocked', alphabetData[newUnlocked].letter);
-        speakText('Great job! You unlocked the next letter!');
+        logActivity('alphabet_unlocked', alphabetData[newUnlocked].letter).catch(() => {});
       }
       if (viewingIndex < alphabetData.length - 1) {
         const next = viewingIndex + 1;
         setViewingIndex(next);
+        const { letter, word } = alphabetData[next];
         setTimeout(() => {
-          const { letter, word } = alphabetData[next];
-          speakText(`${letter} is for ${word}`);
-        }, 400);
+          speakText(shouldUnlockAlpha
+            ? `Great job! ${letter} is for ${word}`
+            : `${letter} is for ${word}`
+          );
+        }, 300);
       } else {
         speakText('Wow! You finished all alphabet lessons!');
         handleLessonComplete('alphabets');
       }
     } else {
-      if (viewingIndex === unlockedNum && unlockedNum < numberData.length - 1) {
-        const newUnlocked = unlockedNum + 1;
+      // Unlock next number only if we're at the current frontier
+      const shouldUnlock = viewingIndex >= unlockedNum && unlockedNum < numberData.length - 1;
+      if (shouldUnlock) {
+        const newUnlocked = viewingIndex + 1;
         persistProgress({ unlockedNum: newUnlocked });
-        logActivity('number_unlocked', numberData[newUnlocked].number);
-        speakText('Great job! You unlocked the next number!');
+        logActivity('number_unlocked', numberData[newUnlocked].number).catch(() => {});
       }
       if (viewingIndex < numberData.length - 1) {
         const next = viewingIndex + 1;
         setViewingIndex(next);
+        const { number, word } = numberData[next];
+        // Single combined utterance — avoids double TTS from chained speakText calls
         setTimeout(() => {
-          const { number, word } = numberData[next];
-          speakText(`${number}. ${word}.`);
-        }, 400);
+          speakText(shouldUnlock ? `Great job! ${word}` : word);
+        }, 300);
       } else {
         speakText('Wow! You finished all number lessons!');
         handleLessonComplete('numbers');
@@ -169,8 +188,9 @@ export default function Lessons({
       const { letter, word } = alphabetData[viewingIndex];
       speakText(`${letter} is for ${word}`);
     } else {
-      const { number, word } = numberData[viewingIndex];
-      speakText(`${number}. ${word}.`);
+      const { word } = numberData[viewingIndex];
+      speakText(word);
+
     }
   };
 
@@ -191,6 +211,7 @@ export default function Lessons({
         speakText={speakText}
         onBack={handleBackToList}
         onNext={handleNext}
+        onComplete={handleTracingComplete}
         isLast={viewingIndex === alphabetData.length - 1}
       />
     );

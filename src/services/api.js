@@ -73,6 +73,14 @@ export async function toggleDailyTask(taskId, currentStatus, starsReward) {
   });
 }
 
+export async function logActivity(action, detail = '') {
+  return fetchWithAuth('/activities/log/', {
+    method: 'POST',
+    body: JSON.stringify({ action, detail: String(detail) })
+  });
+}
+
 export async function fetchMLPrediction() {
   return fetchWithAuth('/ml/predict/');
 }
+

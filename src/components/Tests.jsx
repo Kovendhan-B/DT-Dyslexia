@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, Trophy, Star } from 'lucide-react';
 import { t } from '../i18n/translations';
-import { logActivity } from '../services/storage';
+import { logActivity, logTestResult } from '../services/api';
 
 import AlphabetTest             from './tests/AlphabetTest';
 import PhonicsTest              from './tests/PhonicsTest';
@@ -50,7 +50,8 @@ export default function Tests({
       : [...testsCompleted, newEntry];
 
     persistProgress({ testsCompleted: newTests, totalXP: totalXP + pointsEarned });
-    logActivity('test_complete', `${testId}: ${pointsEarned}pts`);
+    logTestResult(testId, pointsEarned).catch(() => {});
+    logActivity('test_complete', `${testId}:${pointsEarned}pts`).catch(() => {});
     setActiveTest(null);
   };
 

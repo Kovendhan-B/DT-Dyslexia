@@ -47,24 +47,70 @@ export default function Dashboard({
   const [burstingTask, setBurstingTask] = useState(null);
   const [lockedTooltip, setLockedTooltip] = useState(null);
   const [showPinModal, setShowPinModal] = useState(false);
-  const [pinInput, setPinInput] = useState('');
-  const [pinError, setPinError] = useState(false);
+  const [pinInput, setPinInput]     = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
+  const [pinError, setPinError]     = useState('');
+  // 'entry' = verifying existing PIN, 'setup' = creating new PIN, 'confirm' = confirming new PIN
+  const [pinMode, setPinMode]       = useState('entry');
   const burstTimeoutRef = useRef(null);
 
   const tr = (key) => t(language, key);
 
-  const handlePinSubmit = (e) => {
+  const PIN_KEY = 'dys_parent_pin';
+
+  const openPinModal = () => {
+    const stored = localStorage.getItem(PIN_KEY);
+    setPinInput('');
+    setPinConfirm('');
+    setPinError('');
+    setPinMode(stored ? 'entry' : 'setup');
+    setShowPinModal(true);
+  };
+
+  const closePinModal = () => {
+    setShowPinModal(false);
+    setPinInput('');
+    setPinConfirm('');
+    setPinError('');
+    setPinMode('entry');
+  };
+
+  // ── Step 1: verify existing PIN ──
+  const handlePinEntry = (e) => {
     e.preventDefault();
-    if (pinInput === '1234') {
-      setShowPinModal(false);
-      setPinInput('');
-      setPinError(false);
+    const stored = localStorage.getItem(PIN_KEY);
+    if (pinInput === stored) {
+      closePinModal();
       setCurrentView('parents');
     } else {
-      setPinError(true);
+      setPinError('Wrong PIN. Try again.');
       setPinInput('');
-      speakText(tr('incorrectPin'));
     }
+  };
+
+  // ── Step 1 of setup: save first entry, move to confirm ──
+  const handlePinSetup = (e) => {
+    e.preventDefault();
+    if (pinInput.length < 4) { setPinError('PIN must be 4 digits.'); return; }
+    setPinConfirm(pinInput);
+    setPinInput('');
+    setPinError('');
+    setPinMode('confirm');
+  };
+
+  // ── Step 2 of setup: confirm and save ──
+  const handlePinConfirm = (e) => {
+    e.preventDefault();
+    if (pinInput !== pinConfirm) {
+      setPinError('PINs do not match. Start again.');
+      setPinInput('');
+      setPinConfirm('');
+      setPinMode('setup');
+      return;
+    }
+    localStorage.setItem(PIN_KEY, pinInput);
+    closePinModal();
+    setCurrentView('parents');
   };
 
   // ── Real data from progress ─────────────────────────────────────────────
@@ -103,37 +149,86 @@ export default function Dashboard({
     { id: 'lessons', emoji: '📚', titleKey: 'lessons',       active: true, onClick: () => setCurrentView('lessons') },
     { id: 'games',   emoji: '🎮', titleKey: 'games',         active: true, onClick: () => setCurrentView('games') },
     { id: 'tests',   emoji: '📝', titleKey: 'tests',         active: true, onClick: () => setCurrentView('tests') },
-    { id: 'parents', emoji: '👨‍👩‍👧', titleKey: 'parentsPortal', active: true, onClick: () => setShowPinModal(true), isParents: true },
+    { id: 'parents', emoji: '👨‍👩‍👧', titleKey: 'parentsPortal', active: true, onClick: () => openPinModal(), isParents: true },
   ];
 
   return (
     <div className="db-root">
 
       {/* PIN Modal */}
-      {showPinModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(8px)' }}>
-          <div style={{ background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(129,140,248,0.2)', padding: '3rem', borderRadius: '28px', textAlign: 'center', boxShadow: '0 24px 60px rgba(0,0,0,0.6)', maxWidth: '360px', width: '90%' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔐</div>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#f1f5f9', margin: '0 0 0.5rem 0' }}>{tr('parentsOnly')}</h2>
-            <p style={{ color: '#94a3b8', marginBottom: '2rem', fontSize: '1rem' }}>{tr('pinInstruction')}</p>
-            <form onSubmit={handlePinSubmit}>
-              <input
-                type="password"
-                maxLength={4}
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
-                autoFocus
-                style={{ fontSize: '2rem', width: '160px', textAlign: 'center', letterSpacing: '12px', padding: '0.8rem', borderRadius: '14px', border: `1.5px solid ${pinError ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.12)'}`, marginBottom: '0.5rem', outline: 'none', background: 'rgba(255,255,255,0.06)', color: '#f1f5f9', boxSizing: 'border-box' }}
-              />
-              {pinError && <div style={{ color: '#f87171', fontWeight: 700, marginBottom: '1rem', fontSize: '0.9rem' }}>{tr('incorrectPin')}</div>}
-              <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'center', marginTop: '1.5rem' }}>
-                <button type="button" onClick={() => { setShowPinModal(false); setPinInput(''); setPinError(false); }} style={{ padding: '0.75rem 1.8rem', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#94a3b8', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: 'var(--font-main)' }}>{tr('cancel')}</button>
-                <button type="submit" style={{ padding: '0.75rem 1.8rem', borderRadius: '50px', border: 'none', background: 'linear-gradient(135deg,#4f46e5,#818cf8)', color: 'white', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', boxShadow: '0 4px 16px rgba(99,102,241,0.4)', fontFamily: 'var(--font-main)' }}>{tr('unlock')}</button>
-              </div>
-            </form>
+      {showPinModal && (() => {
+        const isSetup   = pinMode === 'setup';
+        const isConfirm = pinMode === 'confirm';
+        const onSubmit  = isSetup ? handlePinSetup : isConfirm ? handlePinConfirm : handlePinEntry;
+
+        const title    = isSetup   ? '🔐 Create a Parent PIN'
+                       : isConfirm ? '✅ Confirm Your PIN'
+                       :             '🔐 Parents Only';
+        const subtitle = isSetup   ? 'Choose a 4-digit PIN to protect the parent portal.'
+                       : isConfirm ? 'Re-enter your PIN to confirm it.'
+                       :             tr('pinInstruction');
+        const btnLabel = isSetup   ? 'Set PIN'
+                       : isConfirm ? 'Confirm PIN'
+                       :             tr('unlock');
+
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(8px)' }}>
+            <div style={{ background: 'rgba(15,23,42,0.97)', backdropFilter: 'blur(20px)', border: '1px solid rgba(129,140,248,0.25)', padding: '3rem', borderRadius: '28px', textAlign: 'center', boxShadow: '0 24px 60px rgba(0,0,0,0.6)', maxWidth: '380px', width: '90%' }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f1f5f9', margin: '0 0 0.5rem 0' }}>{title}</h2>
+              <p style={{ color: '#94a3b8', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: 1.5 }}>{subtitle}</p>
+
+              {/* Step indicator for setup */}
+              {(isSetup || isConfirm) && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                  {[1, 2].map(step => {
+                    const active = step === 1 ? isSetup : isConfirm;
+                    const done   = step === 1 && isConfirm;
+                    return (
+                      <div key={step} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, background: done ? '#34d399' : active ? '#818cf8' : 'rgba(255,255,255,0.1)', color: (active || done) ? 'white' : '#64748b', transition: 'all 0.3s' }}>
+                          {done ? '✓' : step}
+                        </div>
+                        {step < 2 && <div style={{ width: 32, height: 2, background: isConfirm ? '#34d399' : 'rgba(255,255,255,0.1)', transition: 'background 0.3s' }} />}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <form onSubmit={onSubmit}>
+                <input
+                  key={pinMode} /* remount on mode change so autoFocus fires */
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={pinInput}
+                  onChange={(e) => { setPinInput(e.target.value.replace(/[^0-9]/g, '')); setPinError(''); }}
+                  autoFocus
+                  placeholder="····"
+                  style={{ fontSize: '2rem', width: '160px', textAlign: 'center', letterSpacing: '12px', padding: '0.8rem', borderRadius: '14px', border: `1.5px solid ${pinError ? 'rgba(239,68,68,0.6)' : 'rgba(129,140,248,0.35)'}`, marginBottom: '0.5rem', outline: 'none', background: 'rgba(255,255,255,0.06)', color: '#f1f5f9', boxSizing: 'border-box', fontFamily: 'monospace' }}
+                />
+                {pinError && <div style={{ color: '#f87171', fontWeight: 600, margin: '0.5rem 0 1rem', fontSize: '0.9rem' }}>{pinError}</div>}
+
+                <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'center', marginTop: '1.5rem' }}>
+                  <button type="button" onClick={closePinModal} style={{ padding: '0.75rem 1.8rem', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#94a3b8', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', fontFamily: 'var(--font-main)' }}>
+                    {tr('cancel')}
+                  </button>
+                  <button type="submit" disabled={pinInput.length < 4} style={{ padding: '0.75rem 1.8rem', borderRadius: '50px', border: 'none', background: pinInput.length < 4 ? 'rgba(99,102,241,0.3)' : 'linear-gradient(135deg,#4f46e5,#818cf8)', color: 'white', fontWeight: 700, fontSize: '1rem', cursor: pinInput.length < 4 ? 'default' : 'pointer', boxShadow: pinInput.length >= 4 ? '0 4px 16px rgba(99,102,241,0.4)' : 'none', fontFamily: 'var(--font-main)', transition: 'all 0.2s' }}>
+                    {btnLabel}
+                  </button>
+                </div>
+              </form>
+
+              {/* Reset PIN link (entry mode only) */}
+              {pinMode === 'entry' && (
+                <button onClick={() => { setPinInput(''); setPinError(''); setPinMode('setup'); }} style={{ marginTop: '1.2rem', background: 'none', border: 'none', color: '#64748b', fontSize: '0.82rem', cursor: 'pointer', textDecoration: 'underline' }}>
+                  Forgot PIN? Reset it
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ═══ ZONE 1 — Identity Bar ══════════════════════════════════════════ */}
       <div className="db-identity-bar">

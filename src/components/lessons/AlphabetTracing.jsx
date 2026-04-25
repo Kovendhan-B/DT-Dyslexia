@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, Volume2, RotateCcw, Star, Eraser, PlayCircle, ArrowRight, CheckCircle } from 'lucide-react';
 
-export default function AlphabetTracing({ data, speakText, onBack, onNext, isLast }) {
+export default function AlphabetTracing({ data, speakText, onBack, onNext, onComplete, isLast }) {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -13,9 +13,11 @@ export default function AlphabetTracing({ data, speakText, onBack, onNext, isLas
   const totalTargetPixelsRef = useRef(0);
   const hitsRef = useRef(new Set());
 
-  // Play instruction on mount
+  // Play instruction on mount; reset success state when letter changes
   useEffect(() => {
     speakText(`This is ${data.letter}... ${data.letter} for ${data.word}! Trace the letter.`);
+    setIsSuccess(false);
+    setProgress(0);
   }, [data]);
 
   // Handle Canvas Setup and Accurate Hit Detection Map
@@ -41,16 +43,16 @@ export default function AlphabetTracing({ data, speakText, onBack, onNext, isLas
     hidden.height = rect.height;
     const hCtx = hidden.getContext('2d', { willReadFrequently: true });
     
-    // Match the standard sans-serif font rendering to the SVG text as close as possible
-    hCtx.font = 'bold 400px sans-serif'; 
+    // Only draw the UPPERCASE letter so the hit-map matches exactly what the user sees on canvas
+    hCtx.font = 'bold 480px sans-serif';
     hCtx.textAlign = 'center';
     hCtx.textBaseline = 'middle';
-    
+
     // Draw thick text to create a generous tolerance zone for children
-    hCtx.lineWidth = 50; 
+    hCtx.lineWidth = 50;
     hCtx.strokeStyle = '#000';
-    hCtx.strokeText(data.letter + data.letter.toLowerCase(), hidden.width / 2, hidden.height * 0.6);
-    hCtx.fillText(data.letter + data.letter.toLowerCase(), hidden.width / 2, hidden.height * 0.6);
+    hCtx.strokeText(data.letter, hidden.width / 2, hidden.height * 0.55);
+    hCtx.fillText(data.letter, hidden.width / 2, hidden.height * 0.55);
 
     try {
       const imgData = hCtx.getImageData(0, 0, hidden.width, hidden.height).data;
@@ -129,7 +131,7 @@ export default function AlphabetTracing({ data, speakText, onBack, onNext, isLas
     const r = Math.floor(y / gridSize);
     
     // Also check immediate neighbors (brush radius simulation) to make it smooth for kids
-    const radius = 2; // Increased radius for much easier hit detection
+    const radius = 3; // Wider radius compensates for SVG vs canvas rendering gap
     for(let i = -radius; i <= radius; i++) {
         for(let j = -radius; j <= radius; j++) {
             const checkC = c + i;
@@ -143,10 +145,9 @@ export default function AlphabetTracing({ data, speakText, onBack, onNext, isLas
         }
     }
     
-    const pct = Math.floor((hitsRef.current.size / totalTargetPixelsRef.current) * 100);
-    // Scale so covering just 40% of the true target area reads as 100% progress
-    const normalizedPct = Math.min(Math.floor((pct / 40) * 100), 100);
-    setProgress(normalizedPct);
+    // Apply 1.5x correction for the systematic undercount caused by SVG/canvas position mismatch
+    const pct = Math.min(Math.floor((hitsRef.current.size / totalTargetPixelsRef.current) * 150), 100);
+    setProgress(pct);
   };
 
   const stopDrawing = () => {
@@ -157,10 +158,10 @@ export default function AlphabetTracing({ data, speakText, onBack, onNext, isLas
   };
 
   const handleDone = () => {
-    // Check scaled progress bar
-    if (progress >= 80) {
+    if (progress >= 65) {
       setIsSuccess(true);
       speakText('Great job! You traced it perfectly!');
+      if (onComplete) onComplete(progress);
     } else {
       speakText('Try again 😊. Trace over all the dotted lines!');
     }
@@ -271,17 +272,17 @@ export default function AlphabetTracing({ data, speakText, onBack, onNext, isLas
               overflow: 'hidden', touchAction: 'none' // CRITICAL: prevents scrolling while drawing
             }}
           >
-            {/* Background Dotted Letter (SVG Layer) */}
+            {/* Background Dotted Letter (SVG Layer) — uppercase only */}
             <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }}>
-              <text 
-                x="50%" y="60%" dominantBaseline="middle" textAnchor="middle" 
-                style={{ 
-                  fontSize: '400px', fontWeight: 'bold',
+              <text
+                x="50%" y="55%" dominantBaseline="middle" textAnchor="middle"
+                style={{
+                  fontSize: '480px', fontWeight: 'bold',
                   fill: 'none', stroke: '#BDBDBD', strokeWidth: '15px',
                   strokeDasharray: '25, 25', strokeLinecap: 'round'
                 }}
               >
-                {data.letter}{data.letter.toLowerCase()}
+                {data.letter}
               </text>
             </svg>
 

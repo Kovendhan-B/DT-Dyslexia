@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, Volume2 } from 'lucide-react';
 
 const PHONICS_DATA = [
-  { letter: 'A', soundText: 'ah', example: 'Apple' },
+  { letter: 'A', soundText: 'a', example: 'Apple' },
   { letter: 'B', soundText: 'buh', example: 'Ball' },
   { letter: 'C', soundText: 'kuh', example: 'Cat' },
   { letter: 'D', soundText: 'duh', example: 'Dog' },
@@ -13,7 +13,7 @@ const PHONICS_DATA = [
   { letter: 'I', soundText: 'ih', example: 'Igloo' },
   { letter: 'J', soundText: 'juh', example: 'Juice' },
   { letter: 'K', soundText: 'kuh', example: 'Kite' },
-  { letter: 'L', soundText: 'ull', example: 'Lion' },
+  { letter: 'L', soundText: 'luh', example: 'Lion' },
   { letter: 'M', soundText: 'mmm', example: 'Monkey' },
   { letter: 'N', soundText: 'nnn', example: 'Nest' },
   { letter: 'O', soundText: 'aw', example: 'Orange' },
@@ -23,7 +23,7 @@ const PHONICS_DATA = [
   { letter: 'S', soundText: 'sss', example: 'Sun' },
   { letter: 'T', soundText: 'tuh', example: 'Tree' },
   { letter: 'U', soundText: 'uh', example: 'Umbrella' },
-  { letter: 'V', soundText: 'vuv', example: 'Violin' },
+  { letter: 'V', soundText: 'vuh', example: 'Violin' },
   { letter: 'W', soundText: 'wuh', example: 'Water' },
   { letter: 'X', soundText: 'ks', example: 'X-ray' },
   { letter: 'Y', soundText: 'yuh', example: 'Yoyo' },
@@ -37,7 +37,7 @@ export default function PhonicsBasics({ speakText, onBack }) {
     setActiveIndex(index);
     const item = PHONICS_DATA[index];
     // We say the letter, then the child-friendly phonetic sound, then the example
-    speakText(`${item.letter}. makes the sound ${item.soundText}. like in ${item.example}.`);
+    speakText(item.letter);
   };
 
   return (

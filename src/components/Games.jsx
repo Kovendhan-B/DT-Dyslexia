@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { t } from '../i18n/translations';
-import { logActivity } from '../services/storage';
+import { logActivity, logGamePlayed } from '../services/api';
 
 import MemoryMatch    from './games/MemoryMatch';
 import LetterMatch    from './games/LetterMatch';
@@ -43,7 +43,8 @@ export default function Games({
     if (activeGame && !completedGames.includes(activeGame)) {
       const newCompleted = [...completedGames, activeGame];
       persistProgress({ gamesCompleted: newCompleted });
-      logActivity('game_complete', activeGame);
+      logGamePlayed(activeGame).catch(() => {});
+      logActivity('game_complete', activeGame).catch(() => {});
       speakText('Awesome! You got a shiny gaming badge!');
     }
     setActiveGame(null);

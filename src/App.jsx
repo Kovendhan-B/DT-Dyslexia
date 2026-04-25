@@ -7,7 +7,7 @@ import Games from './components/Games';
 import Tests from './components/Tests';
 import ParentsPortal from './components/ParentsPortal';
 import { supabase } from './services/supabaseClient';
-import { fetchProgress, toggleDailyTask as apiToggleTask } from './services/api';
+import { fetchProgress, updateProgress as apiUpdateProgress, toggleDailyTask as apiToggleTask } from './services/api';
 import { t } from './i18n/translations';
 
 function App() {
@@ -32,6 +32,28 @@ function App() {
   const [speechSpeed, setSpeechSpeed]   = useState('normal');
   const [lastSpokenText, setLastSpokenText] = useState('');
   const [language, setLanguage]         = useState('en');   // 'en' | 'ta'
+  // ── Sidebar PIN gate ───────────────────────────────────────────────────────
+  const [showSidebarPin, setShowSidebarPin] = useState(false);
+  const [sidebarPinInput, setSidebarPinInput] = useState('');
+  const [sidebarPinError, setSidebarPinError] = useState('');
+  const [sidebarPinMode, setSidebarPinMode]   = useState('entry'); // 'entry' | 'setup' | 'confirm'
+  const [sidebarPinConfirm, setSidebarPinConfirm] = useState('');
+  const PIN_KEY = 'dys_parent_pin';
+
+  const openSidebarPin = () => {
+    const stored = localStorage.getItem(PIN_KEY);
+    setSidebarPinInput('');
+    setSidebarPinConfirm('');
+    setSidebarPinError('');
+    setSidebarPinMode(stored ? 'entry' : 'setup');
+    setShowSidebarPin(true);
+  };
+  const closeSidebarPin = () => {
+    setShowSidebarPin(false);
+    setSidebarPinInput('');
+    setSidebarPinConfirm('');
+    setSidebarPinError('');
+  };
 
   // ── Bootstrap: check for existing session on mount ─────────────────────────
   useEffect(() => {
@@ -63,11 +85,29 @@ function App() {
     // Voice
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find(v => v.lang === 'en-IN' && (v.name.includes('Female') || v.name.includes('Heera'))) ||
-                    voices.find(v => v.lang === 'en-IN') ||
-                    voices.find(v => v.name.includes('Google UK English Female')) ||
-                    voices.find(v => v.name.includes('Zira'));
-      if (voice) setSweetVoice(voice);
+      const voice =
+        // 1st: Edge Neural Indian English Female (Neerja) — best quality, free
+        voices.find(v => v.name.includes('Neerja')) ||
+        // 2nd: Edge Neural Indian English Male (Prabhat)
+        voices.find(v => v.name.includes('Prabhat')) ||
+        // 3rd: Any en-IN Online/Natural neural voice (Edge)
+        voices.find(v => v.lang === 'en-IN' && v.name.includes('Online')) ||
+        // 4th: Google Indian English Female (Chrome)
+        voices.find(v => v.lang === 'en-IN' && v.name.toLowerCase().includes('female')) ||
+        // 5th: Microsoft Heera (Windows Indian female, non-neural)
+        voices.find(v => v.name.includes('Heera')) ||
+        // 6th: Any en-IN voice
+        voices.find(v => v.lang === 'en-IN') ||
+        // 7th: Microsoft Ravi (Windows Indian male)
+        voices.find(v => v.name.includes('Ravi')) ||
+        // 8th: Google UK Female fallback
+        voices.find(v => v.name.includes('Google UK English Female')) ||
+        // 9th: Windows Zira (US last resort)
+        voices.find(v => v.name.includes('Zira'));
+      if (voice) {
+        setSweetVoice(voice);
+        console.log('[TTS] Using voice:', voice.name, voice.lang);
+      }
     };
     loadVoices();
     if (speechSynthesis.onvoiceschanged !== undefined) {
@@ -91,9 +131,11 @@ function App() {
   const replayAudio = () => { if (lastSpokenText) speakText(lastSpokenText); };
 
   // ── Persist progress helper ────────────────────────────────────────────────
+  // Does an optimistic UI update immediately, then syncs to the Django API.
   const persistProgress = (patch) => {
-    const updated = updateProgress(patch);
-    setProgress(updated);
+    const updated = { ...(progress || {}), ...patch };
+    setProgress(updated); // Optimistic update
+    apiUpdateProgress(patch).catch(err => console.error('Failed to persist progress:', err));
     return updated;
   };
 
@@ -412,7 +454,11 @@ function App() {
           <div className="nav-divider">
             <button
               className={`nav-item ${currentView === 'parents' ? 'active' : ''}`}
-              onClick={() => { speakText(tr('parentsPortal')); setCurrentView('parents'); setIsSidebarOpen(false); }}
+              onClick={() => {
+                speakText(tr('parentsPortal'));
+                setIsSidebarOpen(false);
+                openSidebarPin();
+              }}
             >
               <Users size={24} />{tr('parentsPortal')}
             </button>
@@ -422,6 +468,76 @@ function App() {
           </div>
         </nav>
       </aside>
+
+      {/* ── Sidebar PIN Gate Modal ─────────────────────────────────────────── */}
+      {showSidebarPin && (() => {
+        const isSetup   = sidebarPinMode === 'setup';
+        const isConfirm = sidebarPinMode === 'confirm';
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          if (isSetup) {
+            if (sidebarPinInput.length < 4) { setSidebarPinError('PIN must be 4 digits.'); return; }
+            setSidebarPinConfirm(sidebarPinInput);
+            setSidebarPinInput('');
+            setSidebarPinError('');
+            setSidebarPinMode('confirm');
+          } else if (isConfirm) {
+            if (sidebarPinInput !== sidebarPinConfirm) {
+              setSidebarPinError('PINs do not match. Try again.');
+              setSidebarPinInput('');
+              setSidebarPinConfirm('');
+              setSidebarPinMode('setup');
+            } else {
+              localStorage.setItem(PIN_KEY, sidebarPinInput);
+              closeSidebarPin();
+              setCurrentView('parents');
+            }
+          } else {
+            const stored = localStorage.getItem(PIN_KEY);
+            if (sidebarPinInput === stored) {
+              closeSidebarPin();
+              setCurrentView('parents');
+            } else {
+              setSidebarPinError('Wrong PIN. Try again.');
+              setSidebarPinInput('');
+            }
+          }
+        };
+
+        const title = isSetup ? '🔐 Create a Parent PIN' : isConfirm ? '✅ Confirm Your PIN' : '🔐 Parents Only';
+        const sub   = isSetup ? 'Choose a 4-digit PIN.' : isConfirm ? 'Re-enter to confirm.' : 'Enter your parent PIN.';
+        const btn   = isSetup ? 'Set PIN' : isConfirm ? 'Confirm' : 'Unlock';
+
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000, backdropFilter: 'blur(8px)' }}>
+            <div style={{ background: 'rgba(15,23,42,0.97)', border: '1px solid rgba(129,140,248,0.25)', padding: '2.5rem', borderRadius: '24px', textAlign: 'center', boxShadow: '0 24px 60px rgba(0,0,0,0.6)', maxWidth: '340px', width: '90%' }}>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#f1f5f9', margin: '0 0 0.4rem' }}>{title}</h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{sub}</p>
+              <form onSubmit={handleSubmit}>
+                <input
+                  key={sidebarPinMode}
+                  type="password" inputMode="numeric" maxLength={4}
+                  value={sidebarPinInput}
+                  onChange={(e) => { setSidebarPinInput(e.target.value.replace(/[^0-9]/g, '')); setSidebarPinError(''); }}
+                  autoFocus placeholder="····"
+                  style={{ fontSize: '1.8rem', width: '140px', textAlign: 'center', letterSpacing: '10px', padding: '0.7rem', borderRadius: '12px', border: `1.5px solid ${sidebarPinError ? 'rgba(239,68,68,0.6)' : 'rgba(129,140,248,0.35)'}`, outline: 'none', background: 'rgba(255,255,255,0.06)', color: '#f1f5f9', boxSizing: 'border-box', fontFamily: 'monospace' }}
+                />
+                {sidebarPinError && <div style={{ color: '#f87171', fontSize: '0.85rem', margin: '0.5rem 0' }}>{sidebarPinError}</div>}
+                <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center', marginTop: '1.2rem' }}>
+                  <button type="button" onClick={closeSidebarPin} style={{ padding: '0.6rem 1.4rem', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)', color: '#94a3b8', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-main)' }}>Cancel</button>
+                  <button type="submit" disabled={sidebarPinInput.length < 4} style={{ padding: '0.6rem 1.4rem', borderRadius: '50px', border: 'none', background: sidebarPinInput.length < 4 ? 'rgba(99,102,241,0.3)' : 'linear-gradient(135deg,#4f46e5,#818cf8)', color: 'white', fontWeight: 700, cursor: sidebarPinInput.length < 4 ? 'default' : 'pointer', fontFamily: 'var(--font-main)' }}>{btn}</button>
+                </div>
+              </form>
+              {!isSetup && !isConfirm && (
+                <button onClick={() => { setSidebarPinInput(''); setSidebarPinError(''); setSidebarPinMode('setup'); }} style={{ marginTop: '1rem', background: 'none', border: 'none', color: '#64748b', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}>
+                  Forgot PIN? Reset it
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Main content */}
       <main className="dashboard-content" style={{ position: 'relative' }}>

@@ -1,15 +1,17 @@
-# 🚀 Dys-Learn — Dyslexia Learning Platform
+# 🚀 DT-Dyslexia (Dys-Learn) — Dyslexia Learning Platform
 
-A child-facing, accessibility-first web application designed to help kids with dyslexia improve English literacy through guided lessons, interactive games, and formal tests — all wrapped in a fun **space exploration** theme.
+A child-facing, accessibility-first web application designed to help kids with dyslexia improve English literacy through guided lessons, interactive games, and formal tests — all wrapped in a fun **space exploration** theme. 
+
+The project features a **React/Vite** frontend, a **Django REST Framework** backend, **Supabase** for authentication/database, and an **XGBoost Machine Learning model** for dyslexia risk prediction.
 
 ---
 
 ## ✨ Features
 
 ### 🔐 Auth & User Management
-- **One user per device** — simple register/login backed by `localStorage`
-- Username pre-filled on return visits for ease of use
-- No backend server required — fully client-side
+- Integrated with **Supabase Authentication**
+- JWT-based authentication
+- Secure profiles per learner with individual tracking
 
 ### 🌍 Bilingual UI (EN / தமிழ்)
 - Toggle between **English** and **Tamil** UI from the Dashboard at any time
@@ -17,230 +19,171 @@ A child-facing, accessibility-first web application designed to help kids with d
 - **Taught content stays in English** — Tamil is the language of instruction, not the subject
 - Tamil text rendered via **Noto Sans Tamil** font
 
+### 🤖 ML-Powered Dyslexia Risk Prediction
+- **XGBoost Model** analyzes learner performance (test scores, game completion rates, activity logs).
+- Predicts risk levels (Low, Moderate, High) and generates actionable recommendations for parents.
+
 ### 🎮 Gamified Dashboard ("My Learning Planet")
-The 4-zone dashboard makes learning feel like an adventure:
-
-| Zone | Description |
-|------|-------------|
-| **Identity Bar** | Avatar, username, rank badge, day streak counter, language toggle |
-| **Hero Planet** | Animated planet that evolves visually as tasks are completed (4 stages) |
-| **Today's Quests** | Clickable task checklist with XP rewards, burst animation on completion |
-| **Progress Vault** | Alphabet (A–Z) and Number (1–10) tiles that unlock as you learn |
-| **Navigation Portals** | Cards to enter Lessons, Games, Tests, and the Parents Portal |
-
-**Rank progression:** ⭐ Star Cadet → 🚀 Galaxy Explorer → 🌌 Cosmic Master
+- **Identity Bar**: Avatar, username, rank badge, day streak counter, language toggle
+- **Hero Planet**: Animated planet that evolves visually as tasks are completed (4 stages)
+- **Today's Quests**: Clickable task checklist with XP rewards, burst animation on completion
+- **Progress Vault**: Alphabet (A–Z) and Number (1–10) tiles that unlock as you learn
+- **Rank progression:** ⭐ Star Cadet → 🚀 Galaxy Explorer → 🌌 Cosmic Master
 
 ### 📚 Lessons (9 modules)
-| Module | Type | Description |
-|--------|------|-------------|
-| Alphabets | Sequential unlock | A–Z with tracing canvas (hit-detection progress bar) |
-| Numbers | Sequential unlock | 1–10 with visual counting |
-| Phonics Basics | Lesson | Letter-sound associations |
-| Simple Words | Lesson | 2–3 letter word recognition |
-| Sight Words | Lesson | Common word flashcards |
-| Word Building | Lesson | Combine letters to form words |
-| Sentences | Lesson | Simple sentence construction |
-| Reading Practice | Lesson | Short sentence reading with word-by-word highlight + TTS |
-| Listening & Matching | Lesson | Audio-driven image matching |
-
-- **Sequential unlock** — each alphabet/number unlocks after completing the previous one
+- Modules include: Alphabets, Numbers, Phonics Basics, Simple Words, Sight Words, Word Building, Sentences, Reading Practice, Listening & Matching.
 - **Alphabet Tracing** — interactive canvas with real hit-detection; 40% coverage = pass
-- Completed lessons tracked with ⭐ badge and persisted across sessions
 
 ### 🎮 Games (6 mini-games)
-| Game | Description |
-|------|-------------|
-| Memory Match | Match words to pictures |
-| Letter Match | Match uppercase to lowercase |
-| Sound Match | Listen and pick the right letter |
-| Word Builder | Unscramble mixed-up words |
-| Missing Letter | Fill in the blank |
-| Quick Tap | Tap the matching picture as fast as you can |
+- Memory Match, Letter Match, Sound Match, Word Builder, Missing Letter, Quick Tap.
 
 ### 📝 Tests (7 formal tests)
-All tests open immediately (no lock) to reduce friction for young learners.
-- Alphabet Test, Phonics Test, Simple Words, Sight Words, Word Building, Sentences, Reading Comprehension
-- Each test tracks **score (pts) + date** — replaying updates the score
-- Cumulative **XP** counter visible at the top of the Test Room
+- Evaluates skills across alphabets, phonics, words, and reading comprehension.
+- Scores are saved to the backend database to track progression over time.
 
 ### 👨‍👩‍👧 Parents Portal (PIN-gated)
-Accessible via the dashboard portal card (PIN: **1234**).
-
-| Section | What it shows |
-|---------|---------------|
-| **Stats cards** | Total XP, Lessons completed, Games played, Tests mastered, Day streak |
-| **Skill bars** | Real percentages computed from actual test scores and unlock progress |
-| **Test History** | Table with test name, score, and date for every attempted test |
-| **Insights** | Rule-based strength identification and recommended focus area |
-| **Activity Timeline** | Timestamped log of up to 50 recent events (logins, completions, unlocks) |
-| **Weekly Stars** | Stars earned from daily task completions in the current week |
+- Accessible via the dashboard portal card.
+- Displays computed analytics from actual user activity, test history, and AI-driven insights.
 
 ### 🔊 Text-to-Speech (TTS)
-- Every label, lesson card, task, and navigation item has a 🔊 button
-- Prefers `en-IN Female` voice → Google UK English Female → Zira
-- **Speed control**: 🐇 Normal (0.85×) / 🐢 Slow (0.6×)
-- **Replay** last spoken text at any time from the floating controls
-
-### 💾 Persistent Progress
-All data is stored in `localStorage` via a centralised `storage.js` service:
-- Daily tasks auto-reset each new calendar day
-- Day streak increments on consecutive daily logins
-- Weekly stars reset every Monday
-- Alphabet/number unlock indices persist across sessions
-- Session activity log maintained (up to 50 entries)
-
-### 🎨 Design
-- **Nunito** font — rounded letterforms with clear `b/d/p/q` distinction, ideal for dyslexia
-- **Noto Sans Tamil** — proper Tamil script rendering
-- Space theme: animated star field, flying rockets, launch transition animation
-- Responsive sidebar navigation with hamburger menu
+- Every label, lesson card, task, and navigation item has a 🔊 button with adjustable speeds.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | React 19 |
-| Build tool | Vite 8 |
-| Icons | Lucide React |
-| Styling | Vanilla CSS (no Tailwind) |
-| Fonts | Google Fonts — Nunito + Noto Sans Tamil |
-| Persistence | `localStorage` (no backend) |
-| Language | JavaScript (JSX) |
+### Frontend
+- **Framework**: React 19 + Vite 8
+- **Styling**: Vanilla CSS (No Tailwind)
+- **Icons**: Lucide React
+- **Fonts**: Google Fonts (Nunito + Noto Sans Tamil)
+
+### Backend
+- **Framework**: Django 5.0.4 + Django REST Framework
+- **Database / Auth**: Supabase (PostgreSQL)
+- **Machine Learning**: XGBoost, Pandas, Scikit-learn (Dyslexia Risk Prediction)
 
 ---
 
 ## 📁 Project Structure
 
-```
-src/
-├── main.jsx                    # Entry point
-├── App.jsx                     # Root: auth shell, TTS engine, sidebar, routing
-├── App.css                     # All component styles (~45 KB)
-├── index.css                   # Base reset, CSS variables, font config
+```text
+DT-Dyslexia/
+├── backend/                    # Django REST API Backend
+│   ├── apps/                   # Django apps
+│   │   ├── activities/         # Handles test results, game stats, logs
+│   │   ├── authentication/     # Supabase JWT Auth
+│   │   ├── dashboard/          # Dashboard analytics APIs
+│   │   ├── ml_service/         # ML Prediction views & XGBoost integration
+│   │   └── profiles/           # User profiles & progress
+│   ├── dyslearn/               # Django core settings
+│   ├── ml_pipeline/            # Scripts to train the ML model
+│   │   ├── data_gen.py         # Synthetic data generator
+│   │   └── train.py            # XGBoost model training script
+│   ├── manage.py
+│   └── requirements.txt        # Python dependencies
 │
-├── services/
-│   └── storage.js              # Central localStorage service (all data ops)
+├── src/                        # React Frontend
+│   ├── components/             # React UI components (Lessons, Games, Tests)
+│   ├── services/               # API & Storage services
+│   ├── i18n/                   # Translations
+│   ├── App.jsx                 # Root Component
+│   └── main.jsx                # Entry point
 │
-├── i18n/
-│   └── translations.js         # EN + Tamil strings for all UI chrome
-│
-└── components/
-    ├── Dashboard.jsx           # 4-zone gamified home screen
-    ├── Lessons.jsx             # Lesson hub + alphabet/number viewer
-    ├── Games.jsx               # Game hub
-    ├── Tests.jsx               # Test hub
-    ├── ParentsPortal.jsx       # Analytics & activity log
-    │
-    ├── lessons/                # 9 lesson sub-components
-    │   ├── AlphabetTracing.jsx
-    │   ├── PhonicsBasics.jsx
-    │   ├── SimpleWords.jsx
-    │   ├── SightWords.jsx
-    │   ├── WordBuilding.jsx
-    │   ├── SentenceFormation.jsx
-    │   ├── ReadingPractice.jsx
-    │   ├── ListeningMatching.jsx
-    │   └── FunLearningGames.jsx
-    │
-    ├── games/                  # 6 mini-game sub-components
-    │   ├── MemoryMatch.jsx
-    │   ├── LetterMatch.jsx
-    │   ├── SoundMatch.jsx
-    │   ├── WordBuilderGame.jsx
-    │   ├── MissingLetter.jsx
-    │   └── QuickTap.jsx
-    │
-    └── tests/                  # 7 test sub-components
-        ├── AlphabetTest.jsx
-        ├── PhonicsTest.jsx
-        ├── SimpleWordsTest.jsx
-        ├── SightWordsTest.jsx
-        ├── WordBuildingTest.jsx
-        ├── SentenceTest.jsx
-        └── ReadingComprehensionTest.jsx
+├── package.json                # Frontend dependencies
+└── vite.config.js              # Vite configuration
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started & Installation
 
 ### Prerequisites
-- **Node.js** v18 or higher
-- **npm** v9 or higher
+- **Node.js** v18+ and **npm** v9+
+- **Python** 3.10+
+- **Supabase** account (for Database and Auth)
 
-### Installation
+### 1. Clone the repository
 
 ```bash
-# Clone the repository
 git clone https://github.com/Kovendhan-B/DT-Dyslexia.git
 cd DT-Dyslexia
-
-# Install dependencies
-npm install
 ```
 
-### Running locally
+### 2. Frontend Setup
+
+Install Node dependencies and start the Vite dev server:
 
 ```bash
+npm install
 npm run dev
 ```
+The frontend will be available at [http://localhost:5173](http://localhost:5173).
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+### 3. Backend Setup
 
-### Building for production
+Open a new terminal and navigate to the `backend` directory:
 
 ```bash
-npm run build
+cd backend
 ```
 
-Output is in the `dist/` folder.
+Create and activate a Python virtual environment:
 
----
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
 
-## 🧭 Usage Guide
+# macOS / Linux
+python3 -m venv venv
+source venv/bin/activate
+```
 
-### First Time Setup
-1. Open the app — you'll see the **registration** screen
-2. Enter a **Learner Name** and **Secret Code** (password)
-3. Click **JOIN CREW!** → rocket launches → you land on the Dashboard
+Install Python dependencies:
 
-### Returning Users
-1. Open the app — your name is pre-filled (one user per device)
-2. Enter your Secret Code and click **BLAST OFF!**
+```bash
+pip install -r requirements.txt
+```
 
-### Navigation
-- Use the **☰ hamburger menu** (top-left) to open the sidebar
-- Navigate between **Dashboard**, **Lessons**, **Games**, **Tests**, and **Parents Portal**
-- Or tap the **portal cards** at the bottom of the Dashboard
+### 4. Environment Variables
 
-### Parents Portal Access
-- Click the 👨‍👩‍👧 **Parents Portal** card on the Dashboard
-- Enter PIN: **1234**
-- View your child's full progress — skills, test history, and activity timeline
+Create a `.env` file inside the `backend` directory and add your Supabase credentials:
 
-### Language Toggle
-- In the identity bar (top of Dashboard), click the **EN / தமிழ்** pill
-- The entire UI switches to Tamil instantly
-- Click again to switch back
+```env
+DJANGO_SECRET_KEY=your_django_secret_key
+DEBUG=True
+DATABASE_URL=your_supabase_postgresql_url
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_JWT_SECRET=your_supabase_jwt_secret
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+```
 
-### TTS Controls (floating, top-right)
-- **🔄 Replay** — replays the last spoken phrase
-- **🐇 Normal / 🐢 Slow** — toggles speech speed
+Run database migrations:
 
----
+```bash
+python manage.py migrate
+```
 
-## 📦 localStorage Keys
+### 5. Train the Machine Learning Model
 
-All data persists in the browser's `localStorage` under these keys:
+Before running the backend, generate the synthetic data and train the XGBoost model for risk prediction:
 
-| Key | Contents |
-|-----|----------|
-| `dys_user` | `{ username, password }` |
-| `dys_progress` | Full progress object (tasks, streak, unlocks, XP, scores, activity log) |
+```bash
+# Ensure you are still in the backend directory
+python ml_pipeline/data_gen.py
+python ml_pipeline/train.py
+```
+This will create an `ml_model/model.pkl` file used by the API.
 
-> To reset all data: open browser DevTools → Application → Local Storage → clear `dys_user` and `dys_progress`.
+### 6. Run the Backend Server
+
+Start the Django development server:
+
+```bash
+python manage.py runserver
+```
+The backend API will be available at [http://localhost:8000](http://localhost:8000).
 
 ---
 
